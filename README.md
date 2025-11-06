@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Project Submission Reporting System
 
 A full-stack Node.js + Express.js application for managing project submissions with multiple user roles.
@@ -142,3 +143,7 @@ server/
 ## License
 
 MIT
+=======
+# BUK-Project-Submission-System
+BUK Project Submission System is a streamlined web platform designed to enhance the supervision and management of final-year projects. Students submit their project work in batches (chapters, milestones, or progress reports), while supervisors review each submission and provide timely feedback.
+>>>>>>> 76f9a9a244a8b8548993647dcfd642df299fb5da
