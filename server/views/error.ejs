@@ -17,14 +17,38 @@
 </head>
 <body>
   <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-md-6">
-        <div class="card shadow-lg">
+    <div class="row">
+      <div class="col-md-6 mx-auto">
+        <div class="card border-0 shadow-sm">
           <div class="card-body text-center p-5">
             <h1 class="display-1 text-danger">!</h1>
-            <h2 class="mb-3"><%= message %></h2>
-            <p class="text-muted"><%= error %></p>
-            <a href="/dashboard" class="btn btn-primary mt-3">Go to Dashboard</a>
+            <h2 class="mb-3"><%= typeof message !== 'undefined' ? message : 'Error' %></h2>
+            <p class="text-muted"><%= typeof error !== 'undefined' ? error : 'An unexpected error occurred' %></p>
+            <% 
+              let dashboardUrl = '/dashboard';
+              if (typeof user !== 'undefined' && user && user.role) {
+                switch(user.role) {
+                  case 'student':
+                    dashboardUrl = '/student/dashboard';
+                    break;
+                  case 'supervisor':
+                    dashboardUrl = '/supervisor/dashboard';
+                    break;
+                  case 'level_coordinator':
+                    dashboardUrl = '/coordinator/dashboard';
+                    break;
+                  case 'hod':
+                    dashboardUrl = '/hod/dashboard';
+                    break;
+                  case 'general_admin':
+                    dashboardUrl = '/admin/dashboard';
+                    break;
+                  default:
+                    dashboardUrl = '/dashboard';
+                }
+              }
+            %>
+            <a href="<%= dashboardUrl %>" class="btn btn-primary mt-3">Go to Dashboard</a>
           </div>
         </div>
       </div>

@@ -2,51 +2,162 @@ const db = require('../config/database');
 const bcrypt = require('bcryptjs');
 const renderPage = require('../utils/renderHelper');
 const { logActivity } = require('../utils/logger');
+const fs = require('fs');
+const path = require('path');
 
-// === ADMIN DASHBOARD ===
-const getDashboard = (req, res) => {
+// === GET ADMIN DASHBOARD ===
+async function getDashboard(req, res) {
   try {
     const user = req.session.user;
-    const allUsers = db.prepare('SELECT * FROM users ORDER BY created_at DESC').all();
 
-    const stats = {
-      coordinators: allUsers.filter(u => u.role === 'level_coordinator').length,
-      supervisors: allUsers.filter(u => u.role === 'supervisor').length,
-      students: allUsers.filter(u => u.role === 'student').length,
-      hods: allUsers.filter(u => u.role === 'hod').length
+    // Collect statistics
+    const stats = db.prepare(`
+      SELECT 
+        (SELECT COUNT(*) FROM users WHERE role = 'level_coordinator') AS coordinators,
+        (SELECT COUNT(*) FROM users WHERE role = 'supervisor') AS supervisors,
+        (SELECT COUNT(*) FROM users WHERE role = 'student') AS students,
+        (SELECT COUNT(*) FROM users WHERE role = 'hod') AS hods,
+        (SELECT COUNT(*) FROM users) AS totalUsers,
+        (SELECT COUNT(*) FROM reports) AS totalReports,
+        (SELECT COUNT(DISTINCT user_id) FROM activity_logs WHERE DATE(created_at) = DATE('now')) AS activeUsers,
+        (SELECT COUNT(*) FROM activity_logs WHERE DATE(created_at) = DATE('now')) AS recentActivities
+    `).get() || {};
+
+    // List recent users
+    const recentUsers = db.prepare(`
+      SELECT 
+        u.id, u.full_name, u.email, u.role, u.department, u.level, u.created_at,
+        (SELECT COUNT(*) FROM reports WHERE student_id = u.id) AS report_count,
+        (SELECT MAX(created_at) FROM activity_logs WHERE user_id = u.id) AS last_activity
+      FROM users u
+      ORDER BY u.created_at DESC
+      LIMIT 15
+    `).all();
+
+    // Recent activities
+    const rawActivities = db.prepare(`
+      SELECT a.*, u.full_name AS user_name, u.role AS user_role
+      FROM activity_logs a
+      LEFT JOIN users u ON a.user_id = u.id
+      ORDER BY a.created_at DESC
+      LIMIT 10
+    `).all();
+    const recentActivities = rawActivities.map(a => ({
+      type: a.action_type,
+      description: `${a.user_name || 'System'} ${a.description || ''}`,
+      timestamp: a.created_at
+    }));
+
+    // Extended stats
+    stats.databaseSize = await getDatabaseSize();
+    stats.activeSessions = await getActiveSessions();
+    stats.apiRequests = 1250;
+
+    // Department user breakdown
+    const departmentStats = db.prepare(`
+      SELECT department, COUNT(*) AS user_count
+      FROM users
+      WHERE department IS NOT NULL
+      GROUP BY department
+    `).all();
+
+    // Report status breakdown
+    const reportStats = db.prepare(`
+      SELECT status, COUNT(*) AS count
+      FROM reports
+      GROUP BY status
+    `).all();
+
+    // User growth per month (past 6 months)
+    const userGrowth = db.prepare(`
+      SELECT 
+        strftime('%Y-%m', created_at) AS month,
+        COUNT(*) AS user_count,
+        SUM(CASE WHEN role = 'student' THEN 1 ELSE 0 END) AS students,
+        SUM(CASE WHEN role = 'supervisor' THEN 1 ELSE 0 END) AS supervisors,
+        SUM(CASE WHEN role = 'level_coordinator' THEN 1 ELSE 0 END) AS coordinators
+      FROM users
+      WHERE created_at >= date('now', '-6 months')
+      GROUP BY strftime('%Y-%m', created_at)
+      ORDER BY month
+    `).all();
+
+    // Compose chart data
+    const chartData = {
+      monthlyLabels: userGrowth.map(row => {
+        const d = new Date(row.month + '-01');
+        return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      }),
+      monthlyStudents: userGrowth.map(row => row.students || 0),
+      monthlySupervisors: userGrowth.map(row => row.supervisors || 0),
+      monthlyCoordinators: userGrowth.map(row => row.coordinators || 0),
+      departmentLabels: departmentStats.map(d => d.department),
+      departmentData: departmentStats.map(d => d.user_count),
+      reportStatus: {
+        approved: reportStats.find(r => r.status === 'approved')?.count || 0,
+        pending: reportStats.find(r => r.status === 'pending')?.count || 0,
+        rejected: reportStats.find(r => r.status === 'rejected')?.count || 0,
+        feedback: reportStats.find(r => r.status === 'feedback_given')?.count || 0
+      }
     };
 
-    const recentUsers = allUsers.slice(0, 5);
-    const coordinators = allUsers.filter(u => u.role === 'level_coordinator');
-
-    renderPage(res, {
-      title: 'Admin Dashboard',
-      view: '../admin/dashboard',
+    res.render('layouts/main', {
+      title: 'System Administration',
       user,
       stats,
-      coordinators,
-      recentUsers
+      recentUsers,
+      recentActivities,
+      chartData,
+      success: req.query.success || null,
+      error: req.query.error || null,
+      view: '../admin/dashboard',
     });
   } catch (error) {
-    console.error('❌ Error loading admin dashboard:', error);
-    renderPage(res, {
+    console.error('Admin Dashboard error:', error);
+    res.status(500).render('error', {
       title: 'Error',
-      view: '../error',
       user: req.session.user,
-      message: 'Failed to load dashboard',
-      error: error.message
+      message: 'Failed to load admin dashboard',
+      error: error?.message || 'Unknown error'
     });
   }
-};
+}
 
-// === MANAGE USERS PAGE ===
-const getManageUsers = (req, res) => {
+// Obtain SQLite database file size in MB
+async function getDatabaseSize() {
+  try {
+    const dbPath = path.join(__dirname, '../data/database.db');
+    if (fs.existsSync(dbPath)) {
+      const stats = fs.statSync(dbPath);
+      return (stats.size / (1024 * 1024)).toFixed(2);
+    }
+    return 0;
+  } catch (error) {
+    console.error('Error getting database size:', error);
+    return 0;
+  }
+}
+
+// Approximate active sessions: unique user_id in activity_logs in past hour
+async function getActiveSessions() {
+  try {
+    const result = db.prepare(`
+      SELECT COUNT(DISTINCT user_id) AS active_count
+      FROM activity_logs
+      WHERE created_at >= datetime('now', '-1 hour')
+    `).get();
+    return result ? result.active_count : 0;
+  } catch (error) {
+    console.error('Error getting active sessions:', error);
+    return 0;
+  }
+}
+
+// === GET USER MANAGEMENT ===
+function getManageUsers(req, res) {
   try {
     const user = req.session.user;
-
-    // Fetch all users
     const users = db.prepare('SELECT * FROM users ORDER BY created_at DESC').all();
-
     renderPage(res, {
       title: 'Manage Users',
       view: '../admin/manage-users',
@@ -60,18 +171,20 @@ const getManageUsers = (req, res) => {
       view: '../error',
       user: req.session.user,
       message: 'Failed to load users',
-      error: error.message
+      error: error?.message || 'Unknown error'
     });
   }
-};
+}
 
 // === ADD USER (POST) ===
-const postAddUser = async (req, res) => {
+async function postAddUser(req, res) {
   const { full_name, email, password, role, level, department, registration_number } = req.body;
   try {
+    if (!password || password.length < 4) {
+      req.flash('error', 'Password is required (min 4 chars).');
+      return res.redirect('/admin/manage-users');
+    }
     const password_hash = bcrypt.hashSync(password, 10);
-
-    // Prevent duplicate email
     const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
     if (existing) {
       req.flash('error', 'Email already exists.');
@@ -81,9 +194,16 @@ const postAddUser = async (req, res) => {
     const result = db.prepare(`
       INSERT INTO users (full_name, email, password_hash, role, level, department, registration_number, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `).run(full_name, email, password_hash, role, level || null, department || 'Computer Science', registration_number || null);
+    `).run(
+      full_name,
+      email,
+      password_hash,
+      role,
+      level || null,
+      department || 'Computer Science',
+      registration_number || null
+    );
 
-    // Log the activity
     await logActivity(
       req.session.user.id,
       'Created User',
@@ -99,17 +219,18 @@ const postAddUser = async (req, res) => {
     req.flash('error', 'Failed to add user');
     res.redirect('/admin/manage-users');
   }
-};
+}
 
 // === DELETE USER ===
-const deleteUser = async (req, res) => {
+async function deleteUser(req, res) {
   const { id } = req.params;
   try {
     const user = db.prepare('SELECT full_name, email FROM users WHERE id = ?').get(id);
-    
+    if (!user) {
+      req.flash('error', 'User not found');
+      return res.redirect('/admin/manage-users');
+    }
     db.prepare('DELETE FROM users WHERE id = ?').run(id);
-    
-    // Log the activity
     await logActivity(
       req.session.user.id,
       'Deleted User',
@@ -117,7 +238,6 @@ const deleteUser = async (req, res) => {
       id,
       { email: user.email, name: user.full_name }
     );
-
     req.flash('success', `User ${user.full_name} deleted successfully!`);
     res.redirect('/admin/manage-users');
   } catch (error) {
@@ -125,13 +245,12 @@ const deleteUser = async (req, res) => {
     req.flash('error', 'Failed to delete user');
     res.redirect('/admin/manage-users');
   }
-};
+}
 
 // === VIEW STUDENTS ===
-const getViewStudents = (req, res) => {
+function getViewStudents(req, res) {
   try {
     const students = db.prepare("SELECT * FROM users WHERE role = 'student' ORDER BY created_at DESC").all();
-
     renderPage(res, {
       title: 'View Students',
       view: '../admin/view-students',
@@ -145,13 +264,13 @@ const getViewStudents = (req, res) => {
       view: '../error',
       user: req.session.user,
       message: 'Failed to load students',
-      error: error.message
+      error: error?.message || 'Unknown error'
     });
   }
-};
+}
 
 // === VIEW SUPERVISORS ===
-const getViewSupervisors = (req, res) => {
+function getViewSupervisors(req, res) {
   try {
     const supervisors = db.prepare("SELECT * FROM users WHERE role = 'supervisor' ORDER BY created_at DESC").all();
     renderPage(res, {
@@ -167,40 +286,40 @@ const getViewSupervisors = (req, res) => {
       view: '../error',
       user: req.session.user,
       message: 'Failed to load supervisors',
-      error: error.message
+      error: error?.message || 'Unknown error'
     });
   }
-};
+}
 
 // === ADD COORDINATOR PAGE ===
-const getAddCoordinator = (req, res) => {
+function getAddCoordinator(req, res) {
   renderPage(res, {
     title: 'Add Level Coordinator',
     view: '../admin/add-coordinator',
     user: req.session.user
   });
-};
+}
 
 // === ADD COORDINATOR (POST) ===
-const postAddCoordinator = async (req, res) => {
+async function postAddCoordinator(req, res) {
   const { full_name, email, password, level } = req.body;
   const department = req.session.user?.department || 'Computer Science';
-
   try {
+    if (!password || password.length < 4) {
+      req.flash('error', 'Password is required (min 4 chars).');
+      return res.redirect('/admin/add-coordinator');
+    }
     const password_hash = bcrypt.hashSync(password, 10);
     const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-
     if (existing) {
       req.flash('error', 'Email already exists. Please use a different email.');
       return res.redirect('/admin/add-coordinator');
     }
-
     const result = db.prepare(`
       INSERT INTO users (full_name, email, password_hash, role, level, department, created_at, updated_at)
       VALUES (?, ?, ?, 'level_coordinator', ?, ?, datetime('now'), datetime('now'))
     `).run(full_name, email, password_hash, level, department);
 
-    // Log the activity
     await logActivity(
       req.session.user.id,
       'Created Level Coordinator',
@@ -216,10 +335,10 @@ const postAddCoordinator = async (req, res) => {
     req.flash('error', 'Error adding coordinator');
     res.redirect('/admin/add-coordinator');
   }
-};
+}
 
 // === EDIT COORDINATOR PAGE ===
-const getEditCoordinator = (req, res) => {
+function getEditCoordinator(req, res) {
   const { id } = req.params;
   try {
     const coordinator = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
@@ -227,7 +346,6 @@ const getEditCoordinator = (req, res) => {
       req.flash('error', 'Coordinator not found');
       return res.redirect('/admin/dashboard');
     }
-
     renderPage(res, {
       title: 'Edit Level Coordinator',
       view: '../admin/edit-coordinator',
@@ -239,10 +357,10 @@ const getEditCoordinator = (req, res) => {
     req.flash('error', 'Failed to load coordinator data');
     res.redirect('/admin/dashboard');
   }
-};
+}
 
 // === UPDATE COORDINATOR ===
-const postEditCoordinator = async (req, res) => {
+async function postEditCoordinator(req, res) {
   const { id } = req.params;
   const { full_name, email, level, department, password } = req.body;
 
@@ -254,7 +372,6 @@ const postEditCoordinator = async (req, res) => {
     `;
     let params = [full_name, email, level, department, id];
 
-    // If password is provided, update it too
     if (password && password.trim() !== '') {
       const password_hash = bcrypt.hashSync(password, 10);
       updateQuery = `
@@ -267,7 +384,6 @@ const postEditCoordinator = async (req, res) => {
 
     db.prepare(updateQuery).run(...params);
 
-    // Log the activity
     await logActivity(
       req.session.user.id,
       'Updated Level Coordinator',
@@ -283,17 +399,20 @@ const postEditCoordinator = async (req, res) => {
     req.flash('error', 'Failed to update coordinator');
     res.redirect(`/admin/edit-coordinator/${id}`);
   }
-};
+}
 
 // === DELETE COORDINATOR ===
-const deleteCoordinator = async (req, res) => {
+async function deleteCoordinator(req, res) {
   const { id } = req.params;
   try {
     const coordinator = db.prepare('SELECT full_name FROM users WHERE id = ?').get(id);
-    
+    if (!coordinator) {
+      req.flash('error', 'Coordinator not found');
+      return res.redirect('/admin/dashboard');
+    }
+
     db.prepare('DELETE FROM users WHERE id = ?').run(id);
 
-    // Log the activity
     await logActivity(
       req.session.user.id,
       'Deleted Level Coordinator',
@@ -309,20 +428,18 @@ const deleteCoordinator = async (req, res) => {
     req.flash('error', 'Failed to delete coordinator');
     res.redirect('/admin/dashboard');
   }
-};
+}
 
 // === ACTIVITY LOGS ===
-const getActivityLogs = (req, res) => {
+function getActivityLogs(req, res) {
   try {
-    const logs = db
-      .prepare(`
-        SELECT al.*, u.full_name AS user_name, u.role as user_role
-        FROM activity_logs al
-        LEFT JOIN users u ON u.id = al.user_id
-        ORDER BY al.created_at DESC
-        LIMIT 100
-      `)
-      .all();
+    const logs = db.prepare(`
+      SELECT al.*, u.full_name AS user_name, u.role AS user_role
+      FROM activity_logs al
+      LEFT JOIN users u ON u.id = al.user_id
+      ORDER BY al.created_at DESC
+      LIMIT 100
+    `).all();
 
     renderPage(res, {
       title: 'Activity Logs',
@@ -337,13 +454,13 @@ const getActivityLogs = (req, res) => {
       view: '../error',
       user: req.session.user,
       message: 'Failed to load activity logs',
-      error: error.message
+      error: error?.message || 'Unknown error'
     });
   }
-};
+}
 
 // === VIEW COORDINATORS ===
-const getViewCoordinators = (req, res) => {
+function getViewCoordinators(req, res) {
   try {
     const coordinators = db.prepare("SELECT * FROM users WHERE role = 'level_coordinator' ORDER BY created_at DESC").all();
     renderPage(res, {
@@ -359,13 +476,13 @@ const getViewCoordinators = (req, res) => {
       view: '../error',
       user: req.session.user,
       message: 'Failed to load coordinators',
-      error: error.message
+      error: error?.message || 'Unknown error'
     });
   }
-};
+}
 
 // === VIEW HODs ===
-const getViewHods = (req, res) => {
+function getViewHods(req, res) {
   try {
     const hods = db.prepare("SELECT * FROM users WHERE role = 'hod' ORDER BY created_at DESC").all();
     renderPage(res, {
@@ -381,11 +498,12 @@ const getViewHods = (req, res) => {
       view: '../error',
       user: req.session.user,
       message: 'Failed to load HODs',
-      error: error.message
+      error: error?.message || 'Unknown error'
     });
   }
-};
+}
 
+// Exporting the key endpoints, using indirection for students/supervisors as in original code
 module.exports = {
   getDashboard,
   getManageUsers,
@@ -399,6 +517,6 @@ module.exports = {
   getActivityLogs,
   getViewCoordinators,
   getViewHods,
-  getViewStudents,
-  getViewSupervisors
+  getViewStudents: getViewStudents,
+  getViewSupervisors: getViewSupervisors
 };

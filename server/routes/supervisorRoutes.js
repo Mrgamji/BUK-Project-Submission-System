@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { requireRole } = require('../middleware/auth');
 const supervisorController = require('../controllers/supervisorController');
-const fileController = require('../controllers/fileController'); // Import file controller
+const fileController = require('../controllers/fileController');
 
 // All routes require supervisor role
 router.use(requireRole('supervisor'));
@@ -13,6 +13,12 @@ router.use(requireRole('supervisor'));
 
 // Supervisor Dashboard
 router.get('/dashboard', supervisorController.getDashboard);
+
+// View all students assigned to the supervisor
+router.get('/students', supervisorController.getAllStudents);
+
+// View all reports assigned to the supervisor
+router.get('/reports', supervisorController.getAllReports);
 
 // View all reports of a specific student
 router.get('/student/:studentId', supervisorController.getStudentReports);
@@ -33,20 +39,8 @@ router.put('/reports/:reportId/move-next-stage', supervisorController.moveToNext
 // ------------------------------
 // File Operations
 // ------------------------------
-
-// Get file content for editing
-router.get('/files/view/:id', fileController.getFileContent);
-
-// Update file content
+router.get('/files/view/:id', fileController.getFileView); // Changed from getFileContent
 router.put('/files/:id', fileController.updateFileContent);
-
-// Download file
 router.get('/files/download/:id', fileController.downloadFile);
-
-// Get file information
 router.get('/files/info/:id', fileController.getFileInfo);
-
-// Get file preview
-router.get('/files/preview/:id', fileController.getFilePreview);
-
 module.exports = router;

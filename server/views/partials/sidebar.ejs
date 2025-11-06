@@ -1,110 +1,136 @@
-<<<<<<< HEAD
-<div class="sidebar d-flex flex-column p-3 shadow-sm" style="width: 250px; background: #fff;">
-  <div class="text-center mb-4">
-    <h5 class="fw-bold text-primary">
-      <i class="bi bi-gear-wide-connected me-2"></i>
-      <%= 
-        user.role === 'general_admin' ? 'Admin Panel' :
-        user.role === 'level_coordinator' ? 'Coordinator Panel' :
-        user.role === 'hod' ? 'HOD Panel' :
-        user.role === 'supervisor' ? 'Supervisor Panel' :
-        user.role === 'student' ? 'Student Panel' :
-        'Panel'
-      %>
+<div class="col-lg-2 col-md-3 px-0 sidebar">
+  <div class="sidebar-header">
+    <h5>
+      <% if (user.role === 'student') { %>
+        <i class="bi bi-person-workspace me-2"></i>Student Panel
+      <% } else if (user.role === 'supervisor') { %>
+        <i class="bi bi-person-check me-2"></i>Supervisor Panel
+      <% } else if (user.role === 'level_coordinator') { %>
+        <i class="bi bi-people me-2"></i>Coordinator Panel
+      <% } else if (user.role === 'hod') { %>
+        <i class="bi bi-person-badge me-2"></i>HOD Panel
+      <% } else if (user.role === 'general_admin') { %>
+        <i class="bi bi-gear me-2"></i>Admin Panel
+      <% } %>
     </h5>
   </div>
-
-  <nav class="nav flex-column">
-    <% if (user.role === 'general_admin') { %>
-      <a class="nav-link <%= title.includes('Dashboard') ? 'active fw-bold text-primary' : '' %>" href="/admin/dashboard">
-        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+  
+  <nav class="nav flex-column py-3">
+    <!-- Student Navigation -->
+    <% if (user.role === 'student') { %>
+      <a class="nav-link <%= title.includes('Dashboard') ? 'active' : '' %>" href="/student/dashboard">
+        <i class="bi bi-speedometer2"></i>Dashboard
       </a>
-
-      <div class="mt-3 mb-2 fw-semibold text-muted small px-3">User Management</div>
-      <a class="nav-link" href="/admin/manage-users">
-        <i class="bi bi-person-plus me-2"></i>All Users
+      <a class="nav-link <%= title.includes('Upload') ? 'active' : '' %>" href="/student/upload-report">
+        <i class="bi bi-cloud-upload"></i>Upload Report
       </a>
-      <a class="nav-link" href="/admin/view-students">
-        <i class="bi bi-mortarboard me-2"></i>Students
+      <a class="nav-link" href="/student/progress">
+        <i class="bi bi-graph-up"></i>My Progress
       </a>
-      <a class="nav-link" href="/admin/view-supervisors">
-        <i class="bi bi-person-workspace me-2"></i>Supervisors
-      </a>
-      <a class="nav-link" href="/admin/view-coordinators">
-        <i class="bi bi-people me-2"></i>Coordinators
-      </a>
-      <a class="nav-link" href="/admin/view-hods">
-        <i class="bi bi-person-badge me-2"></i>HODs
-      </a>
-
-      <div class="mt-3 mb-2 fw-semibold text-muted small px-3">System</div>
-      <a class="nav-link" href="/admin/activity-logs">
-        <i class="bi bi-clock-history me-2"></i>Activity Logs
-      </a>
-      <a class="nav-link text-danger" href="/logout">
-        <i class="bi bi-box-arrow-right me-2"></i>Logout
-      </a>
-
-=======
-<div class="sidebar" style="width: 250px;">
-  <div class="p-4">
-    <h5 class="text-center mb-4">
-      <i class="bi bi-journal-text"></i>
-      Dashboard
-    </h5>
-  </div>
-  <nav class="nav flex-column">
-    <% if (user.role === 'general_admin') { %>
-      <a class="nav-link" href="/admin/dashboard">
-        <i class="bi bi-speedometer2 me-2"></i>Dashboard
-      </a>
-      <a class="nav-link" href="/admin/add-coordinator">
-        <i class="bi bi-person-plus me-2"></i>Add Coordinator
-      </a>
-      <a class="nav-link" href="/admin/activity-logs">
-        <i class="bi bi-clock-history me-2"></i>Activity Logs
-      </a>
->>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae
-    <% } else if (user.role === 'level_coordinator') { %>
-      <a class="nav-link" href="/coordinator/dashboard">
-        <i class="bi bi-speedometer2 me-2"></i>Dashboard
-      </a>
-      <a class="nav-link" href="/coordinator/progress-overview">
-        <i class="bi bi-graph-up me-2"></i>Progress Overview
-      </a>
-<<<<<<< HEAD
-
-=======
->>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae
-    <% } else if (user.role === 'hod') { %>
-      <a class="nav-link" href="/hod/dashboard">
-        <i class="bi bi-speedometer2 me-2"></i>Dashboard
-      </a>
-      <a class="nav-link" href="/hod/students">
-        <i class="bi bi-people me-2"></i>Students
-      </a>
-      <a class="nav-link" href="/hod/reports">
-        <i class="bi bi-file-earmark-text me-2"></i>Reports
-      </a>
-<<<<<<< HEAD
-
-=======
->>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae
-    <% } else if (user.role === 'supervisor') { %>
-      <a class="nav-link" href="/supervisor/dashboard">
-        <i class="bi bi-speedometer2 me-2"></i>Dashboard
-      </a>
-<<<<<<< HEAD
-
-=======
->>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae
-    <% } else if (user.role === 'student') { %>
-      <a class="nav-link" href="/student/dashboard">
-        <i class="bi bi-speedometer2 me-2"></i>Dashboard
-      </a>
-      <a class="nav-link" href="/student/upload-report">
-        <i class="bi bi-cloud-upload me-2"></i>Upload Report
+      <a class="nav-link" href="/student/supervisor">
+        <i class="bi bi-person-check"></i>Supervisor
       </a>
     <% } %>
+    
+    <!-- Supervisor Navigation -->
+    <% if (user.role === 'supervisor') { %>
+      <a class="nav-link" href="/supervisor/dashboard">
+        <i class="bi bi-speedometer2"></i>Dashboard
+      </a>
+      <a class="nav-link" href="/supervisor/reports">
+        <i class="bi bi-file-earmark-text"></i>Student Reports
+      </a>
+      <a class="nav-link" href="/supervisor/students">
+        <i class="bi bi-people"></i>My Students
+      </a>
+    <% } %>
+    
+    <!-- Level Coordinator Navigation -->
+    <% if (user.role === 'level_coordinator') { %>
+      <a class="nav-link" href="/coordinator/dashboard">
+        <i class="bi bi-speedometer2"></i>Dashboard
+      </a>
+      <a class="nav-link" href="/coordinator/students">
+        <i class="bi bi-people"></i>Students
+      </a>
+      <a class="nav-link" href="/coordinator/supervisors">
+        <i class="bi bi-person-workspace"></i>Supervisors
+      </a>
+      <a class="nav-link" href="/coordinator/assignments">
+        <i class="bi bi-link"></i>Assignments
+      </a>
+    <% } %>
+    
+    <!-- HOD Navigation -->
+    <% if (user.role === 'hod') { %>
+      <a class="nav-link" href="/hod/dashboard">
+        <i class="bi bi-speedometer2"></i>Dashboard
+      </a>
+      <a class="nav-link" href="/hod/students">
+        <i class="bi bi-people"></i>Students
+      </a>
+      <a class="nav-link" href="/hod/reports">
+        <i class="bi bi-file-earmark-text"></i>Reports
+      </a>
+      <a class="nav-link" href="/hod/supervisors">
+        <i class="bi bi-person-workspace"></i>Supervisors
+      </a>
+    <% } %>
+    
+    <!-- Admin Navigation -->
+    <% if (user.role === 'general_admin') { %>
+      <a class="nav-link" href="/admin/dashboard">
+        <i class="bi bi-speedometer2"></i>Dashboard
+      </a>
+      <a class="nav-link" href="/admin/manage-users">
+        <i class="bi bi-people"></i>User Management
+      </a>
+      <a class="nav-link" href="/admin/system-settings">
+        <i class="bi bi-gear"></i>System Settings
+      </a>
+      <a class="nav-link" href="/admin/activity-logs">
+        <i class="bi bi-clock-history"></i>Activity Logs
+      </a>
+    <% } %>
+    
+    <!-- Common Links: Show Profile & Settings links for all roles -->
+    <div class="mt-3 pt-3 border-top">
+      <% if (user.role === 'student') { %>
+        <a class="nav-link" href="/student/profile">
+          <i class="bi bi-person"></i>My Profile
+        </a>
+        <a class="nav-link" href="/student/settings">
+          <i class="bi bi-gear"></i>Settings
+        </a>
+      <% } else if (user.role === 'supervisor') { %>
+        <a class="nav-link" href="/supervisor/profile">
+          <i class="bi bi-person"></i>My Profile
+        </a>
+        <a class="nav-link" href="/supervisor/settings">
+          <i class="bi bi-gear"></i>Settings
+        </a>
+      <% } else if (user.role === 'level_coordinator') { %>
+        <a class="nav-link" href="/coordinator/profile">
+          <i class="bi bi-person"></i>My Profile
+        </a>
+        <a class="nav-link" href="/coordinator/settings">
+          <i class="bi bi-gear"></i>Settings
+        </a>
+      <% } else if (user.role === 'hod') { %>
+        <a class="nav-link" href="/hod/profile">
+          <i class="bi bi-person"></i>My Profile
+        </a>
+        <a class="nav-link" href="/hod/settings">
+          <i class="bi bi-gear"></i>Settings
+        </a>
+      <% } else if (user.role === 'general_admin') { %>
+        <a class="nav-link" href="/admin/profile">
+          <i class="bi bi-person"></i>My Profile
+        </a>
+        <a class="nav-link" href="/admin/settings">
+          <i class="bi bi-gear"></i>Settings
+        </a>
+      <% } %>
+    </div>
   </nav>
 </div>

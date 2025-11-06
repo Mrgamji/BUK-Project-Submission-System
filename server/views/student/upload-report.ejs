@@ -1,111 +1,316 @@
-<<<<<<< HEAD
+<% if (!supervisor) { %>
+  <div class="row justify-content-center align-items-center" style="min-height: 60vh;">
+    <div class="col-md-8 mx-auto">
+      <div class="card text-center py-5 border-0 shadow-none bg-transparent">
+        <div class="card-body">
+          <i class="bi bi-clock-history display-1 text-muted mb-3"></i>
+          <h2 class="text-muted mb-3">Wait until supervisor is assigned</h2>
+          <p class="lead text-muted">You can't upload a report until you have been assigned a supervisor.</p>
+          <a href="/student/dashboard" class="btn btn-primary mt-3">
+            <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } else { %>
+<div class="row mb-4">
+  <div class="col-12">
+    <h1 class="page-title"><i class="bi bi-cloud-upload me-2"></i>Upload New Report</h1>
+    <p class="page-subtitle">Submit your project report for supervisor review</p>
+  </div>
+</div>
+
 <div class="row">
-  <div class="col-md-8 mx-auto">
-    <div class="card shadow-sm">
+  <div class="col-lg-8 col-md-10 mx-auto">
+    <div class="card">
       <div class="card-header bg-white">
         <h5 class="mb-0">
-          <i class="bi bi-cloud-upload me-2"></i>Upload New Report
+          <i class="bi bi-file-earmark-plus me-2 text-primary"></i>Report Submission Form
         </h5>
       </div>
-      <div class="card-body">
+      <div class="card-body p-4">
 
-        <!-- Display Errors -->
-        <% if (error) { %>
-          <div class="alert alert-danger" role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i><%= error %>
+        <!-- Success Message -->
+        <% if (success) { %>
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <strong>Success!</strong> <%= success %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>
         <% } %>
 
-        <form action="/student/upload-report" method="POST" enctype="multipart/form-data" novalidate>
+        <!-- Error Message -->
+        <% if (error) { %>
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Error!</strong> <%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% } %>
+
+        <form action="/student/upload-report" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+          
           <!-- Report Title -->
-          <div class="mb-3">
-            <label for="title" class="form-label">Report Title <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="title" name="title" required value="<%= typeof title !== 'undefined' ? title : '' %>">
+          <div class="mb-4">
+            <label for="title" class="form-label fw-semibold">
+              <i class="bi bi-pencil-square me-2 text-primary"></i>Report Title
+              <span class="text-danger">*</span>
+            </label>
+            <input 
+              type="text" 
+              class="form-control form-control-lg" 
+              id="title" 
+              name="title" 
+              placeholder="Enter a descriptive title for your report"
+              value="<%= typeof title !== 'undefined' ? title : '' %>"
+              required
+            >
+            <div class="form-text">Be specific about the content of your report</div>
+            <div class="invalid-feedback">
+              Please provide a report title.
+            </div>
           </div>
 
           <!-- Report Stage -->
-          <div class="mb-3">
-            <label for="report_stage" class="form-label">Report Stage <span class="text-danger">*</span></label>
-            <select class="form-select" id="report_stage" name="report_stage" required>
-              <option value="">Select Stage</option>
-              <option value="progress_1">Progress Report 1</option>
-              <option value="progress_2">Progress Report 2</option>
-              <option value="progress_3">Progress Report 3</option>
-              <option value="final">Final Report</option>
+          <div class="mb-4">
+            <label for="report_stage" class="form-label fw-semibold">
+              <i class="bi bi-bar-chart-steps me-2 text-primary"></i>Report Stage
+              <span class="text-danger">*</span>
+            </label>
+            <select class="form-select form-select-lg" id="report_stage" name="report_stage" required>
+              <option value="">Select Report Stage</option>
+              <option value="progress_1">📊 Progress Report 1 - Initial Research & Proposal</option>
+              <option value="progress_2">🔧 Progress Report 2 - System Design & Development</option>
+              <option value="progress_3">⚡ Progress Report 3 - Implementation & Testing</option>
+              <option value="final">🎓 Final Report - Complete Project Documentation</option>
             </select>
+            <div class="form-text">Choose the appropriate stage for your current progress</div>
+            <div class="invalid-feedback">
+              Please select a report stage.
+            </div>
           </div>
 
           <!-- File Upload -->
-          <div class="mb-3">
-            <label for="report" class="form-label">Upload File <span class="text-danger">*</span></label>
-            <input type="file" class="form-control" id="report" name="report" required accept="*/*">
-            <small class="text-muted">Accepted: any file type (Max 50MB)</small>
+          <div class="mb-4">
+            <label for="report" class="form-label fw-semibold">
+              <i class="bi bi-paperclip me-2 text-primary"></i>Upload File
+              <span class="text-danger">*</span>
+            </label>
+            <div class="file-upload-area border rounded-3 p-4 text-center bg-light">
+              <i class="bi bi-cloud-arrow-up display-4 text-muted mb-3"></i>
+              <h5 class="text-muted mb-2">Drag & drop your file here</h5>
+              <p class="text-muted mb-3">or click to browse</p>
+              <input 
+                type="file" 
+                class="form-control form-control-lg d-none" 
+                id="report" 
+                name="report" 
+                required
+                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+              >
+              <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('report').click()">
+                <i class="bi bi-folder2-open me-2"></i>Choose File
+              </button>
+              <div id="fileInfo" class="mt-3 d-none">
+                <div class="alert alert-info mb-0">
+                  <i class="bi bi-file-earmark-text me-2"></i>
+                  <span id="fileName"></span>
+                  <small class="d-block text-muted mt-1" id="fileSize"></small>
+                </div>
+              </div>
+            </div>
+            <div class="form-text">
+              <i class="bi bi-info-circle me-1"></i>
+              Accepted formats: PDF, DOC, DOCX, TXT, JPG, PNG (Max 5MB)
+            </div>
+            <div class="invalid-feedback">
+              Please select a file to upload.
+            </div>
           </div>
 
-          <!-- Actions -->
-          <div class="d-flex justify-content-between">
-            <a href="/student/dashboard" class="btn btn-secondary">
-              <i class="bi bi-arrow-left me-1"></i>Cancel
+          <!-- Requirements Checklist -->
+          <div class="mb-4">
+            <div class="card border-0 bg-light">
+              <div class="card-body">
+                <h6 class="card-title mb-3">
+                  <i class="bi bi-check2-circle me-2 text-success"></i>Before submitting, ensure:
+                </h6>
+                <ul class="list-unstyled mb-0">
+                  <li class="mb-2">
+                    <i class="bi bi-check text-success me-2"></i>
+                    File name clearly identifies the content
+                  </li>
+                  <li class="mb-2">
+                    <i class="bi bi-check text-success me-2"></i>
+                    Document is properly formatted and readable
+                  </li>
+                  <li class="mb-2">
+                    <i class="bi bi-check text-success me-2"></i>
+                    All required sections are completed
+                  </li>
+                  <li>
+                    <i class="bi bi-check text-success me-2"></i>
+                    File size is within limits (5MB)
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+            <a href="/student/dashboard" class="btn btn-outline-secondary btn-lg">
+              <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
             </a>
-            <button type="submit" class="btn btn-primary">
-              <i class="bi bi-cloud-upload me-1"></i>Upload Report
+            <button type="submit" class="btn btn-primary btn-lg px-4">
+              <i class="bi bi-cloud-upload me-2"></i>Upload Report
             </button>
           </div>
         </form>
       </div>
     </div>
-  </div>
-</div>
-=======
-<%
-  const title = 'Upload Report';
-  const body = `
-    <div class="row">
-      <div class="col-md-8 mx-auto">
-        <div class="card">
-          <div class="card-header bg-white">
-            <h5 class="mb-0"><i class="bi bi-cloud-upload me-2"></i>Upload New Report</h5>
+
+    <!-- Help Section -->
+    <div class="card mt-4">
+      <div class="card-header bg-white">
+        <h6 class="mb-0">
+          <i class="bi bi-question-circle me-2 text-primary"></i>Need Help?
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h6><i class="bi bi-file-text me-2"></i>Format Guidelines</h6>
+            <ul class="list-unstyled text-muted small">
+              <li>• Use clear, descriptive file names</li>
+              <li>• Include page numbers if applicable</li>
+              <li>• Ensure images are clear and readable</li>
+            </ul>
           </div>
-          <div class="card-body">
-            ${error ? `
-              <div class="alert alert-danger">
-                <i class="bi bi-exclamation-triangle me-2"></i>${error}
-              </div>
-            ` : ''}
-            <form action="/student/upload-report" method="POST" enctype="multipart/form-data">
-              <div class="mb-3">
-                <label class="form-label">Report Title</label>
-                <input type="text" class="form-control" name="title" required placeholder="e.g., Literature Review">
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Report Stage</label>
-                <select class="form-select" name="report_stage" required>
-                  <option value="">Select Stage</option>
-                  <option value="progress_1">Progress Report 1</option>
-                  <option value="progress_2">Progress Report 2</option>
-                  <option value="progress_3">Progress Report 3</option>
-                  <option value="final">Final Report</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Upload File</label>
-                <input type="file" class="form-control" name="report" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
-                <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB)</small>
-              </div>
-              <div class="d-flex justify-content-between">
-                <a href="/student/dashboard" class="btn btn-secondary">
-                  <i class="bi bi-arrow-left me-1"></i>Cancel
-                </a>
-                <button type="submit" class="btn btn-primary">
-                  <i class="bi bi-cloud-upload me-1"></i>Upload Report
-                </button>
-              </div>
-            </form>
+          <div class="col-md-6">
+            <h6><i class="bi bi-clock me-2"></i>Processing Time</h6>
+            <ul class="list-unstyled text-muted small">
+              <li>• Supervisor review: 3-5 working days</li>
+              <li>• You'll be notified via email</li>
+              <li>• Check dashboard for updates</li>
+            </ul>
           </div>
         </div>
       </div>
     </div>
-  `;
-%>
-<%- include('../layouts/main', { title, body, user }) %>
->>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae
+  </div>
+</div>
+
+<!-- JavaScript for enhanced file upload -->
+<script>
+  // File upload enhancement
+  document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('report');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const uploadArea = document.querySelector('.file-upload-area');
+
+    // Click on upload area to trigger file input
+    uploadArea.addEventListener('click', function(e) {
+      if (e.target !== fileInput) {
+        fileInput.click();
+      }
+    });
+
+    // Drag and drop functionality
+    uploadArea.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      uploadArea.classList.add('border-primary', 'bg-blue-light');
+    });
+
+    uploadArea.addEventListener('dragleave', function() {
+      uploadArea.classList.remove('border-primary', 'bg-blue-light');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+      e.preventDefault();
+      uploadArea.classList.remove('border-primary', 'bg-blue-light');
+      
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        updateFileInfo();
+      }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', updateFileInfo);
+
+    function updateFileInfo() {
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        fileName.textContent = file.name;
+        fileSize.textContent = `Size: ${formatFileSize(file.size)}`;
+        fileInfo.classList.remove('d-none');
+        uploadArea.classList.add('border-success');
+      } else {
+        fileInfo.classList.add('d-none');
+        uploadArea.classList.remove('border-success');
+      }
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  });
+</script>
+
+<style>
+  .file-upload-area {
+    border: 2px dashed #dee2e6;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .file-upload-area:hover {
+    border-color: var(--buk-blue);
+    background-color: #f8f9fa;
+  }
+
+  .file-upload-area.border-primary {
+    border-color: var(--buk-blue) !important;
+    background-color: #e7f1ff;
+  }
+
+  .file-upload-area.border-success {
+    border-color: var(--buk-success) !important;
+    background-color: #d4edda;
+  }
+
+  .bg-blue-light {
+    background-color: #e7f1ff !important;
+  }
+
+  .form-control-lg, .form-select-lg {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+
+  .btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+  }
+</style>
+<% } %>

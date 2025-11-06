@@ -2,230 +2,230 @@
   <!-- Header Section -->
   <div class="row mb-4">
     <div class="col-12">
-      <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="/supervisor/dashboard" class="text-decoration-none">Dashboard</a></li>
-          <li class="breadcrumb-item"><a href="/supervisor/student/<%= report.student_id %>" class="text-decoration-none">Student Reports</a></li>
-          <li class="breadcrumb-item active" aria-current="page"><%= report.title %></li>
-        </ol>
-      </nav>
-      
-      <div class="d-flex justify-content-between align-items-start">
-        <div class="d-flex align-items-center">
-          <a href="/supervisor/student/<%= report.student_id %>" class="btn btn-outline-secondary btn-sm me-3">
-            <i class="bi bi-arrow-left me-1"></i>Back
-          </a>
-          <div>
-            <h1 class="h3 mb-1 fw-bold text-dark">
-              <i class="bi bi-file-earmark-text me-2 text-primary"></i>
-              <%= report.title %>
-            </h1>
-            <p class="text-muted mb-0">Review and provide feedback</p>
-          </div>
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="page-title mb-1">
+            <i class="bi bi-file-earmark-text me-2"></i>Report Review
+          </h1>
+          <p class="page-subtitle mb-0">Review and provide feedback for student report</p>
         </div>
         <div class="text-end">
-          <span class="badge bg-<%= 
-            report.status === 'approved' ? 'success' : 
-            report.status === 'rejected' ? 'danger' : 
-            report.status === 'pending' ? 'warning' : 'secondary' 
-          %> fs-6 px-3 py-2">
-            <i class="bi bi-<%= 
-              report.status === 'approved' ? 'check-circle' : 
-              report.status === 'rejected' ? 'x-circle' : 
-              report.status === 'pending' ? 'clock' : 'dash-circle' 
-            %> me-1"></i>
-            <%= report.status.toUpperCase() %>
-          </span>
+          <a href="/supervisor/reports" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Reports
+          </a>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Alert Messages -->
+  <% if (typeof success !== 'undefined' && success) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i><%= success %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <% } %>
+  
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <% } %>
+
   <div class="row">
-    <!-- Main Content -->
-    <div class="col-lg-8">
-      <!-- Report Overview Card -->
-      <div class="card mb-4 border-0 shadow-lg">
-        <div class="card-header bg-gradient-primary text-white border-0">
-          <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold">
-              <i class="bi bi-clipboard-data me-2"></i>Report Overview
-            </h5>
-            <% if (nextStage) { %>
-              <button id="moveNextStageBtn" class="btn btn-light btn-sm shadow">
-                <i class="bi bi-arrow-right-circle me-1"></i>Advance to <%= nextStage.replace('_', ' ').toUpperCase() %>
-              </button>
-            <% } %>
-          </div>
+    <!-- Main Report Content -->
+    <div class="col-lg-8 mb-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-clipboard-data me-2"></i>Report Overview
+          </h5>
+          <% if (typeof nextStage !== 'undefined' && nextStage) { %>
+            <button id="moveNextStageBtn" class="btn btn-light btn-sm shadow">  
+              <i class="bi bi-arrow-right-circle me-1"></i>Advance to <%= nextStage.replace('_', ' ').toUpperCase() %>
+            </button>
+          <% } %>
         </div>
         <div class="card-body">
-          <div class="row g-4">
-            <div class="col-md-6">
-              <div class="d-flex align-items-center mb-3">
-                <div class="bg-light rounded-circle p-3 me-3">
-                  <i class="bi bi-person text-primary fs-4"></i>
-                </div>
-                <div>
-                  <h6 class="mb-1 text-muted">Student</h6>
-                  <p class="mb-0 fw-semibold fs-5"><%= report.student_name %></p>
-                  <small class="text-muted"><%= report.student_email %></small>
-                </div>
+          <% if (typeof report !== 'undefined') { %>
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <h6 class="fw-semibold text-muted mb-2">Report Information</h6>
+                <table class="table table-sm table-borderless">
+                  <tr>
+                    <td class="text-muted" style="width: 120px;">Title:</td>
+                    <td class="fw-semibold"><%= report.title %></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Stage:</td>
+                    <td>
+                      <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                        <%= report.report_stage.replace('_', ' ').toUpperCase() %>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Status:</td>
+                    <td>
+                      <% if (report.status === 'pending') { %>
+                        <span class="badge bg-warning text-dark">
+                          <i class="bi bi-clock me-1"></i>Pending Review
+                        </span>
+                      <% } else if (report.status === 'approved') { %>
+                        <span class="badge bg-success">
+                          <i class="bi bi-check-circle me-1"></i>Approved
+                        </span>
+                      <% } else if (report.status === 'rejected') { %>
+                        <span class="badge bg-danger">
+                          <i class="bi bi-x-circle me-1"></i>Rejected
+                        </span>
+                      <% } else { %>
+                        <span class="badge bg-info">
+                          <i class="bi bi-chat-text me-1"></i>Feedback Given
+                        </span>
+                      <% } %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Submitted:</td>
+                    <td><%= new Date(report.submitted_at).toLocaleString() %></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Last Updated:</td>
+                    <td><%= new Date(report.updated_at).toLocaleString() %></td>
+                  </tr>
+                </table>
               </div>
-              
-              <div class="d-flex align-items-center mb-3">
-                <div class="bg-light rounded-circle p-3 me-3">
-                  <i class="bi bi-card-text text-primary fs-4"></i>
-                </div>
-                <div>
-                  <h6 class="mb-1 text-muted">Registration No</h6>
-                  <p class="mb-0 fw-semibold"><%= report.registration_number %></p>
-                </div>
-              </div>
-
-              <div class="d-flex align-items-center mb-3">
-                <div class="bg-light rounded-circle p-3 me-3">
-                  <i class="bi bi-mortarboard text-primary fs-4"></i>
-                </div>
-                <div>
-                  <h6 class="mb-1 text-muted">Level</h6>
-                  <p class="mb-0 fw-semibold"><%= report.student_level %></p>
-                </div>
+              <div class="col-md-6">
+                <h6 class="fw-semibold text-muted mb-2">Student Information</h6>
+                <table class="table table-sm table-borderless">
+                  <tr>
+                    <td class="text-muted" style="width: 120px;">Name:</td>
+                    <td class="fw-semibold"><%= report.student_name %></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Email:</td>
+                    <td><%= report.student_email %></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Version:</td>
+                    <td>v<%= report.version || 1 %></td>
+                  </tr>
+                </table>
               </div>
             </div>
-            
-            <div class="col-md-6">
-              <div class="d-flex align-items-center mb-3">
-                <div class="bg-light rounded-circle p-3 me-3">
-                  <i class="bi bi-flag text-primary fs-4"></i>
-                </div>
-                <div>
-                  <h6 class="mb-1 text-muted">Stage</h6>
-                  <p class="mb-0 fw-semibold text-uppercase"><%= report.report_stage.replace('_', ' ') %></p>
-                </div>
-              </div>
-              
-              <div class="d-flex align-items-center mb-3">
-                <div class="bg-light rounded-circle p-3 me-3">
-                  <i class="bi bi-file-earmark text-primary fs-4"></i>
-                </div>
-                <div>
-                  <h6 class="mb-1 text-muted">File</h6>
-                  <p class="mb-0 fw-semibold">
-                    <%= report.file_name %> 
-                    <small class="text-info">(<%= (report.file_size / 1024 / 1024).toFixed(2) %> MB)</small>
-                  </p>
-                </div>
-              </div>
 
-              <div class="d-flex align-items-center mb-3">
-                <div class="bg-light rounded-circle p-3 me-3">
-                  <i class="bi bi-clock-history text-primary fs-4"></i>
-                </div>
-                <div>
-                  <h6 class="mb-1 text-muted">Version</h6>
-                  <p class="mb-0 fw-semibold">v<%= report.version || '1.0' %></p>
-                </div>
+            <!-- File Information -->
+            <div class="mb-4">
+              <h6 class="fw-semibold text-muted mb-3">Report File</h6>
+              <div class="d-flex gap-2">
+                <% if (report.file_url) { %>
+                  <a href="/supervisor/files/download/<%= report.id %>" class="btn btn-primary">
+                    <i class="bi bi-download me-1"></i>Download Report
+                  </a>
+                  <a href="/supervisor/files/view/<%= report.id %>" class="btn btn-outline-primary">
+                    <i class="bi bi-eye me-1"></i>View File
+                  </a>
+                  <button class="btn btn-outline-secondary" id="fileInfoBtn" data-report-id="<%= report.id %>">
+                    <i class="bi bi-info-circle me-1"></i>File Info
+                  </button>
+                <% } else { %>
+                  <span class="text-muted">No file uploaded for this report</span>
+                <% } %>
               </div>
             </div>
-          </div>
-          
-          <% if (report.submitted_at) { %>
-            <div class="border-top pt-3 mt-3">
-              <small class="text-muted">
-                <i class="bi bi-calendar me-1"></i>
-                Submitted: <strong><%= new Date(report.submitted_at).toLocaleString() %></strong>
-              </small>
+
+            <!-- Quick Actions -->
+            <% if (report.status === 'pending') { %>
+              <div class="mb-4">
+                <h6 class="fw-semibold text-muted mb-3">Quick Actions</h6>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-success" onclick="approveReport(<%= report.id %>)">
+                    <i class="bi bi-check-circle me-1"></i>Approve Report
+                  </button>
+                  <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+                    <i class="bi bi-chat-text me-1"></i>Provide Feedback
+                  </button>
+                </div>
+              </div>
+            <% } %>
+          <% } else { %>
+            <div class="text-center py-4">
+              <i class="bi bi-exclamation-triangle display-4 text-muted opacity-25 mb-3"></i>
+              <p class="text-muted">Report information not available</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar - Feedback and Actions -->
+    <div class="col-lg-4 mb-4">
+      <!-- Feedback Section -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-chat-text me-2"></i>Feedback History
+            <span class="badge bg-primary ms-2"><%= typeof feedback !== 'undefined' ? feedback.length : 0 %></span>
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if (typeof feedback !== 'undefined' && feedback.length > 0) { %>
+            <div class="list-group list-group-flush">
+              <% feedback.forEach(item => { %>
+                <div class="list-group-item border-0 px-0 py-3">
+                  <div class="d-flex align-items-start mb-2">
+                    <div class="flex-shrink-0">
+                      <i class="bi bi-person-circle text-muted fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                      <h6 class="fw-semibold mb-1"><%= item.supervisor_name %></h6>
+                      <p class="small text-muted mb-2">
+                        <%= new Date(item.created_at).toLocaleString() %>
+                      </p>
+                      <p class="mb-2"><%= item.comment %></p>
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-light text-dark border">
+                          <i class="bi bi-gear me-1"></i><%= item.action_taken %>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="text-center py-3">
+              <i class="bi bi-chat-text display-6 text-muted opacity-25 mb-2"></i>
+              <p class="text-muted small">No feedback provided yet</p>
             </div>
           <% } %>
         </div>
       </div>
 
-      <!-- File Viewer Section -->
-      <div class="card border-0 shadow-lg mb-4">
-        <div class="card-header bg-white border-0">
-          <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold text-dark">
-              <i class="bi bi-eye me-2 text-primary"></i>Document Viewer
-            </h5>
-            <div class="btn-group" role="group">
-              <button id="refreshBtn" class="btn btn-outline-secondary btn-sm" 
-                      data-bs-toggle="tooltip" title="Reload original content">
-                <i class="bi bi-arrow-clockwise"></i>
-              </button>
-              <a id="downloadBtn" href="/supervisor/files/download/<%= report.id %>" 
-                 class="btn btn-outline-primary btn-sm" 
-                 data-bs-toggle="tooltip" title="Download original file">
-                <i class="bi bi-download me-1"></i> Download
-              </a>
-              <button id="saveBtn" class="btn btn-success btn-sm d-none" 
-                      data-bs-toggle="tooltip" title="Save changes to file">
-                <i class="bi bi-save me-1"></i> Save
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="card-body p-0">
-          <div id="fileViewer" style="height:700px; position: relative; background: #f8f9fa;">
-            <div id="editorLoading" class="d-flex justify-content-center align-items-center h-100">
-              <div class="text-center">
-                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-                <h5 class="text-muted">Loading Document Viewer</h5>
-                <p class="text-muted">Please wait while we prepare your file...</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card-footer bg-light border-0 d-none" id="editorStatus">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <i class="bi bi-circle-fill text-success me-2 fs-6" id="statusIcon"></i>
-              <small class="text-muted" id="editorMessage">Ready</small>
-            </div>
-            <small class="text-muted" id="fileInfo"></small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Feedback History -->
-      <% if (feedback && feedback.length > 0) { %>
-        <div class="card border-0 shadow-lg">
-          <div class="card-header bg-white border-0">
-            <h5 class="mb-0 fw-bold text-dark">
-              <i class="bi bi-chat-left-text me-2 text-primary"></i>Feedback History
-              <span class="badge bg-primary ms-2"><%= feedback.length %></span>
+      <!-- HOD Feedback Section -->
+      <% if (typeof hodFeedback !== 'undefined' && hodFeedback.length > 0) { %>
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0 fw-semibold">
+              <i class="bi bi-star me-2"></i>HOD Feedback
+              <span class="badge bg-warning ms-2"><%= hodFeedback.length %></span>
             </h5>
           </div>
           <div class="card-body">
-            <div class="timeline">
-              <% feedback.forEach((item, index) => { %>
-                <div class="timeline-item <%= index === 0 ? 'timeline-item-current' : '' %>">
-                  <div class="timeline-marker">
-                    <i class="bi bi-<%= 
-                      item.action_taken === 'approve' ? 'check-circle-fill text-success' : 
-                      item.action_taken === 'reject' ? 'x-circle-fill text-danger' : 
-                      'chat-fill text-warning' 
-                    %>"></i>
-                  </div>
-                  <div class="timeline-content">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                      <div>
-                        <h6 class="mb-1 fw-bold"><%= item.supervisor_name %></h6>
-                        <span class="badge bg-<%= 
-                          item.action_taken === 'approve' ? 'success' : 
-                          item.action_taken === 'reject' ? 'danger' : 'warning' 
-                        %> text-capitalize">
-                          <i class="bi bi-<%= 
-                            item.action_taken === 'approve' ? 'check' : 
-                            item.action_taken === 'reject' ? 'x' : 'arrow-repeat' 
-                          %> me-1"></i>
-                          <%= item.action_taken.replace('_', ' ') %>
-                        </span>
-                      </div>
-                      <small class="text-muted"><%= new Date(item.created_at).toLocaleString() %></small>
+            <div class="list-group list-group-flush">
+              <% hodFeedback.forEach(item => { %>
+                <div class="list-group-item border-0 px-0 py-3">
+                  <div class="d-flex align-items-start mb-2">
+                    <div class="flex-shrink-0">
+                      <i class="bi bi-person-badge text-warning fs-5"></i>
                     </div>
-                    <div class="feedback-content bg-light rounded p-3">
+                    <div class="flex-grow-1 ms-3">
+                      <h6 class="fw-semibold mb-1"><%= item.hod_name %></h6>
+                      <p class="small text-muted mb-2">
+                        <%= new Date(item.created_at).toLocaleString() %>
+                      </p>
                       <p class="mb-0"><%= item.comment %></p>
                     </div>
                   </div>
@@ -234,649 +234,317 @@
             </div>
           </div>
         </div>
-      <% } else { %>
-        <div class="card border-0 shadow-lg">
-          <div class="card-body text-center py-5">
-            <i class="bi bi-chat-left-text display-1 text-muted mb-3"></i>
-            <h5 class="text-muted">No Feedback Yet</h5>
-            <p class="text-muted">Be the first to provide feedback on this report.</p>
-          </div>
-        </div>
       <% } %>
     </div>
+  </div>
+</div>
 
-    <!-- Sidebar -->
-    <div class="col-lg-4">
-      <!-- Feedback Form -->
-      <div class="card border-0 shadow-lg sticky-top" style="top: 100px;">
-        <div class="card-header bg-gradient-primary text-white border-0">
-          <h5 class="mb-0 fw-bold">
-            <i class="bi bi-pencil-square me-2"></i>Provide Feedback
-          </h5>
-        </div>
-        <div class="card-body">
-          <form id="feedbackForm" action="/supervisor/feedback" method="POST">
-            <input type="hidden" name="reportId" value="<%= report.id %>">
-            
-            <div class="mb-4">
-              <label for="action" class="form-label fw-semibold text-dark mb-3">
-                <i class="bi bi-gear me-1"></i>Action Required
-              </label>
-              <div class="action-buttons">
-                <div class="form-check mb-2">
-                  <input class="form-check-input" type="radio" name="action" id="approve" value="approve" required>
-                  <label class="form-check-label w-100 p-3 rounded border" for="approve">
-                    <div class="d-flex align-items-center">
-                      <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
-                      <div>
-                        <strong class="d-block">Approve Report</strong>
-                        <small class="text-muted">Mark this report as completed and approved</small>
-                      </div>
-                    </div>
-                  </label>
-                </div>
-                
-                <div class="form-check mb-2">
-                  <input class="form-check-input" type="radio" name="action" id="reject" value="reject" required>
-                  <label class="form-check-label w-100 p-3 rounded border" for="reject">
-                    <div class="d-flex align-items-center">
-                      <i class="bi bi-x-circle-fill text-danger fs-4 me-3"></i>
-                      <div>
-                        <strong class="d-block">Reject Report</strong>
-                        <small class="text-muted">Return with major revisions needed</small>
-                      </div>
-                    </div>
-                  </label>
-                </div>
-                
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="action" id="request_reupload" value="request_reupload" required>
-                  <label class="form-check-label w-100 p-3 rounded border" for="request_reupload">
-                    <div class="d-flex align-items-center">
-                      <i class="bi bi-arrow-repeat text-warning fs-4 me-3"></i>
-                      <div>
-                        <strong class="d-block">Request Reupload</strong>
-                        <small class="text-muted">Ask for file reupload with minor changes</small>
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
-            
-            <div class="mb-4">
-              <label for="comment" class="form-label fw-semibold text-dark mb-3">
-                <i class="bi bi-chat-left-text me-1"></i>Feedback Comments
-              </label>
-              <textarea name="comment" id="comment" class="form-control" rows="6" 
-                        placeholder="Provide constructive feedback, suggestions for improvement, or specific instructions for revisions..."
-                        maxlength="2000" required></textarea>
-              <div class="d-flex justify-content-between align-items-center mt-2">
-                <small class="text-muted">Be specific and constructive in your feedback</small>
-                <small class="text-muted">
-                  <span id="charCount">0</span>/2000
-                </small>
-              </div>
-            </div>
-            
-            <button type="submit" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow">
-              <i class="bi bi-send me-2"></i>Submit Feedback
-            </button>
-          </form>
-        </div>
+<!-- Feedback Modal -->
+<div class="modal fade" id="feedbackModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Provide Feedback for <%= typeof report !== 'undefined' ? report.student_name : 'Student' %></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-
-      <!-- Quick Stats -->
-      <div class="card border-0 shadow-sm mt-4">
-        <div class="card-body">
-          <h6 class="fw-bold text-dark mb-3">
-            <i class="bi bi-graph-up me-2 text-primary"></i>Report Stats
-          </h6>
-          <div class="row text-center">
-            <div class="col-4">
-              <div class="border-end">
-                <h4 class="fw-bold text-primary mb-1"><%= feedback ? feedback.length : 0 %></h4>
-                <small class="text-muted">Feedbacks</small>
-              </div>
-            </div>
-            <div class="col-4">
-              <div class="border-end">
-                <h4 class="fw-bold text-info mb-1"><%= (report.file_size / 1024 / 1024).toFixed(1) %></h4>
-                <small class="text-muted">MB</small>
-              </div>
-            </div>
-            <div class="col-4">
-              <div>
-                <h4 class="fw-bold text-success mb-1"><%= report.report_stage.split('_')[1] || '1' %></h4>
-                <small class="text-muted">Stage</small>
-              </div>
-            </div>
+      <form id="feedbackForm" action="/supervisor/feedback" method="POST">
+        <div class="modal-body">
+          <input type="hidden" name="report_id" value="<%= typeof report !== 'undefined' ? report.id : '' %>">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Comments</label>
+            <textarea class="form-control" name="comment" rows="6" placeholder="Provide detailed feedback, suggestions, and areas for improvement..." required></textarea>
+            <div class="form-text">Be specific and constructive in your feedback to help the student improve.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Action Required</label>
+            <select class="form-select" name="action_taken" required>
+              <option value="">Select an action...</option>
+              <option value="revise">Revise and Resubmit</option>
+              <option value="minor_changes">Minor Changes Needed</option>
+              <option value="meet_discuss">Schedule Meeting to Discuss</option>
+              <option value="no_action">No Action Required</option>
+            </select>
           </div>
         </div>
-      </div>
-
-      <!-- Quick Actions -->
-      <div class="card border-0 shadow-sm mt-4">
-        <div class="card-body">
-          <h6 class="fw-bold text-dark mb-3">
-            <i class="bi bi-lightning me-2 text-primary"></i>Quick Actions
-          </h6>
-          <div class="d-grid gap-2">
-            <a href="/supervisor/files/download/<%= report.id %>" class="btn btn-outline-primary btn-sm">
-              <i class="bi bi-download me-1"></i>Download Report
-            </a>
-            <a href="mailto:<%= report.student_email %>?subject=Feedback on <%= report.title %>" class="btn btn-outline-secondary btn-sm">
-              <i class="bi bi-envelope me-1"></i>Email Student
-            </a>
-            <% if (report.status === 'approved' && nextStage) { %>
-              <button id="quickMoveStageBtn" class="btn btn-outline-success btn-sm">
-                <i class="bi bi-arrow-right-circle me-1"></i>Advance Stage
-              </button>
-            <% } %>
-          </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-send me-1"></i>Submit Feedback
+          </button>
         </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- File Info Modal -->
+<div class="modal fade" id="fileInfoModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-info-circle me-2 text-primary"></i>File Information
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="fileInfoContent">
+        <div class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading file information...</span>
+          </div>
+          <p class="mt-2 text-muted">Loading file information...</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Monaco Editor -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs/loader.min.js"></script>
-
 <style>
-  .bg-gradient-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  }
-  
-  .feedback-content {
-    border-left: 4px solid #007bff;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  }
-  
-  .timeline {
-    position: relative;
-    padding-left: 2rem;
-  }
-  
-  .timeline::before {
-    content: '';
-    position: absolute;
-    left: 15px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: #e9ecef;
-  }
-  
-  .timeline-item {
-    position: relative;
-    margin-bottom: 2rem;
-  }
-  
-  .timeline-item-current .timeline-marker {
-    transform: scale(1.2);
-  }
-  
-  .timeline-marker {
-    position: absolute;
-    left: -2rem;
-    top: 0;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 3px solid #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  }
-  
-  .timeline-content {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    border: 1px solid #e9ecef;
-  }
-  
-  .action-buttons .form-check-label {
-    transition: all 0.3s ease;
-    cursor: pointer;
-  }
-  
-  .action-buttons .form-check-label:hover {
-    background: #f8f9fa;
-    transform: translateY(-2px);
-  }
-  
-  .action-buttons .form-check-input:checked + .form-check-label {
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-    border-color: #2196f3 !important;
-  }
-  
-  .sticky-top {
-    z-index: 1020;
-  }
-  
-  #fileViewer {
-    border-radius: 0 0 12px 12px;
-  }
-  
-  .breadcrumb {
-    background: transparent;
-    padding: 0;
-  }
-  
-  .breadcrumb-item a {
-    color: #6c757d;
-    transition: color 0.3s ease;
-  }
-  
-  .breadcrumb-item a:hover {
-    color: #495057;
-  }
+.table-borderless td {
+  border: none;
+  padding: 0.25rem 0;
+}
 
-  .quick-actions .btn {
-    transition: all 0.3s ease;
-  }
+.list-group-item {
+  border: none;
+  border-bottom: 1px solid #e9ecef;
+}
 
-  .quick-actions .btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  }
+.list-group-item:last-child {
+  border-bottom: none;
+}
+
+.badge {
+  font-weight: 500;
+}
+
+.file-info-item {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.file-info-item:last-child {
+  border-bottom: none;
+}
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', async () => {
-  // Initialize tooltips
-  const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-  tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip));
-
-  // Character counter for feedback
-  const commentTextarea = document.getElementById('comment');
-  const charCount = document.getElementById('charCount');
-  
-  commentTextarea.addEventListener('input', () => {
-    const count = commentTextarea.value.length;
-    charCount.textContent = count;
-    charCount.className = count > 1800 ? 'text-danger' : 'text-muted';
-  });
-
-  const reportId = "<%= report.id %>";
-  const fileUrl = `/supervisor/files/view/${reportId}`;
-  const ext = "<%= report.file_name.split('.').pop().toLowerCase() %>";
-  const viewer = document.getElementById('fileViewer');
-  const saveBtn = document.getElementById('saveBtn');
-  const refreshBtn = document.getElementById('refreshBtn');
-  const editorStatus = document.getElementById('editorStatus');
-  const editorMessage = document.getElementById('editorMessage');
-  const fileInfo = document.getElementById('fileInfo');
-  const statusIcon = document.getElementById('statusIcon');
-  const editorLoading = document.getElementById('editorLoading');
-
-  // Check if file is editable
-  const editableFormats = <%= JSON.stringify(config.editableFormats) %>;
-  const isEditable = editableFormats.includes(ext);
-
-  // Show file info
-  fileInfo.textContent = `${ext.toUpperCase()} file • ${isEditable ? 'Editable' : 'View only'}`;
-
-  if (ext === 'pdf') {
-    // Enhanced PDF viewer
-    viewer.innerHTML = `
-      <div class="d-flex flex-column h-100">
-        <div class="bg-dark text-white p-3 d-flex justify-content-between align-items-center">
-          <span><i class="bi bi-file-pdf me-2"></i>PDF Document</span>
-          <div>
-            <button class="btn btn-sm btn-outline-light me-2" onclick="document.getElementById('pdfFrame').contentWindow.print()">
-              <i class="bi bi-printer"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-light" onclick="zoomPdf('in')">
-              <i class="bi bi-zoom-in"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-light mx-1" onclick="zoomPdf('out')">
-              <i class="bi bi-zoom-out"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-light" onclick="zoomPdf('reset')">
-              <i class="bi bi-fullscreen"></i>
-            </button>
-          </div>
-        </div>
-        <iframe id="pdfFrame" src="${fileUrl}" width="100%" height="100%" 
-                style="border: none; flex: 1;" title="PDF Viewer"></iframe>
-      </div>
-    `;
-    editorLoading.remove();
-    return;
-  }
-
-  // Initialize Monaco Editor for editable files
-  if (isEditable) {
-    try {
-      require.config({ 
-        paths: { 
-          vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs' 
-        } 
-      });
-
-      require(['vs/editor/editor.main'], async () => {
-        try {
-          const response = await fetch(fileUrl);
-          if (!response.ok) throw new Error('Failed to load file');
-          
-          const text = await response.text();
-          editorLoading.remove();
-
-          const languageMap = {
-            'js': 'javascript',
-            'html': 'html',
-            'css': 'css',
-            'md': 'markdown',
-            'json': 'json',
-            'xml': 'xml',
-            'txt': 'plaintext',
-            'py': 'python',
-            'java': 'java',
-            'cpp': 'cpp',
-            'c': 'c',
-            'php': 'php'
-          };
-
-          const editor = monaco.editor.create(viewer, {
-            value: text,
-            language: languageMap[ext] || 'plaintext',
-            theme: 'vs-light',
-            automaticLayout: true,
-            minimap: { enabled: true },
-            scrollBeyondLastLine: false,
-            fontSize: 14,
-            lineNumbers: 'on',
-            folding: true,
-            wordWrap: 'on',
-            renderLineHighlight: 'all',
-            selectOnLineNumbers: true,
-            matchBrackets: 'always'
-          });
-
-          // Show save button for editable files
-          saveBtn.classList.remove('d-none');
-          editorStatus.classList.remove('d-none');
-
-          let originalContent = text;
-          let hasUnsavedChanges = false;
-
-          // Track changes
-          editor.onDidChangeModelContent(() => {
-            hasUnsavedChanges = editor.getValue() !== originalContent;
-            updateEditorStatus(hasUnsavedChanges);
-          });
-
-          // Save functionality
-          saveBtn.addEventListener('click', async () => {
-            if (!hasUnsavedChanges) return;
-            
-            try {
-              saveBtn.disabled = true;
-              saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Saving...';
-              
-              const updatedContent = editor.getValue();
-              const response = await fetch(`/supervisor/files/${reportId}`, {
-                method: 'PUT',
-                headers: { 
-                  'Content-Type': 'text/plain',
-                  'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: updatedContent
-              });
-
-              const data = await response.json();
-              
-              if (data.success) {
-                originalContent = updatedContent;
-                hasUnsavedChanges = false;
-                updateEditorStatus(false);
-                showNotification('File saved successfully!', 'success');
-              } else {
-                throw new Error(data.error || 'Failed to save file');
-              }
-            } catch (error) {
-              console.error('Save error:', error);
-              showNotification('Failed to save file: ' + error.message, 'error');
-            } finally {
-              saveBtn.disabled = false;
-              saveBtn.innerHTML = '<i class="bi bi-save me-1"></i> Save';
-            }
-          });
-
-          // Refresh functionality
-          refreshBtn.addEventListener('click', async () => {
-            if (hasUnsavedChanges && !confirm('You have unsaved changes. Reload anyway?')) {
-              return;
-            }
-            
-            try {
-              const response = await fetch(fileUrl);
-              const text = await response.text();
-              editor.setValue(text);
-              originalContent = text;
-              hasUnsavedChanges = false;
-              updateEditorStatus(false);
-              showNotification('File reloaded successfully', 'info');
-            } catch (error) {
-              showNotification('Failed to reload file', 'error');
-            }
-          });
-
-          function updateEditorStatus(unsaved) {
-            if (unsaved) {
-              editorStatus.style.background = 'linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)';
-              editorMessage.textContent = 'Unsaved changes';
-              statusIcon.className = 'bi bi-circle-fill text-warning me-2 fs-6';
-              saveBtn.classList.add('btn-warning');
-              saveBtn.classList.remove('btn-success');
-            } else {
-              editorStatus.style.background = '';
-              editorMessage.textContent = 'All changes saved';
-              statusIcon.className = 'bi bi-circle-fill text-success me-2 fs-6';
-              saveBtn.classList.remove('btn-warning');
-              saveBtn.classList.add('btn-success');
-            }
-          }
-
-        } catch (error) {
-          editorLoading.innerHTML = `
-            <div class="text-center text-danger p-5">
-              <i class="bi bi-exclamation-triangle display-1 mb-3"></i>
-              <h4>Failed to load file</h4>
-              <p class="text-muted">${error.message}</p>
-              <button class="btn btn-primary mt-2" onclick="location.reload()">
-                <i class="bi bi-arrow-clockwise me-1"></i>Try Again
-              </button>
-            </div>
-          `;
-        }
-      });
-    } catch (error) {
-      console.error('Monaco Editor loading error:', error);
-      editorLoading.innerHTML = `
-        <div class="text-center text-warning p-5">
-          <i class="bi bi-exclamation-triangle display-1 mb-3"></i>
-          <h4>Editor Failed to Load</h4>
-          <p class="text-muted">Showing plain text version instead.</p>
-          <button class="btn btn-outline-primary mt-2" onclick="location.reload()">
-            <i class="bi bi-arrow-clockwise me-1"></i>Retry
-          </button>
-        </div>
-      `;
-    }
-  } else {
-    // Enhanced plain text viewer for non-editable files
-    try {
-      const response = await fetch(fileUrl);
-      const text = await response.text();
-      editorLoading.remove();
-      viewer.innerHTML = `
-        <div class="h-100 d-flex flex-column">
-          <div class="bg-dark text-white p-3">
-            <i class="bi bi-file-text me-2"></i>Text Preview
-          </div>
-          <pre class="flex-grow-1 m-0 p-4" style="overflow: auto; font-family: 'Courier New', monospace; background: #1e1e1e; color: #d4d4d4;">${escapeHtml(text)}</pre>
-        </div>
-      `;
-    } catch (error) {
-      editorLoading.innerHTML = `
-        <div class="text-center text-danger p-5">
-          <i class="bi bi-exclamation-triangle display-1 mb-3"></i>
-          <h4>Failed to load file content</h4>
-          <p class="text-muted">The file could not be loaded. Please try downloading it instead.</p>
-        </div>
-      `;
-    }
-  }
-
-  // Move to next stage functionality
-  const moveNextStageBtn = document.getElementById('moveNextStageBtn');
-  const quickMoveStageBtn = document.getElementById('quickMoveStageBtn');
-  
-  const moveToNextStage = async (button) => {
-    if (!confirm('Are you sure you want to advance this report to the next stage? This action cannot be undone.')) return;
-    
-    try {
-      button.disabled = true;
-      button.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Processing...';
-      
-      const response = await fetch(`/supervisor/reports/${reportId}/move-next-stage`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        showNotification('Report advanced successfully!', 'success');
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        throw new Error(data.error);
-      }
-    } catch (error) {
-      showNotification('Failed to advance report: ' + error.message, 'error');
-      button.disabled = false;
-      button.innerHTML = '<i class="bi bi-arrow-right-circle me-1"></i>Advance to <%= nextStage.replace('_', ' ').toUpperCase() %>';
-    }
-  };
-
-  if (moveNextStageBtn) {
-    moveNextStageBtn.addEventListener('click', () => moveToNextStage(moveNextStageBtn));
-  }
-
-  if (quickMoveStageBtn) {
-    quickMoveStageBtn.addEventListener('click', () => moveToNextStage(quickMoveStageBtn));
-  }
-
-  // Enhanced feedback form handling
-  const feedbackForm = document.getElementById('feedbackForm');
-  if (feedbackForm) {
-    feedbackForm.addEventListener('submit', (e) => {
-      const action = document.querySelector('input[name="action"]:checked');
-      const comment = document.getElementById('comment').value;
-      
-      if (!action) {
-        e.preventDefault();
-        showNotification('Please select an action for this report', 'warning');
-        return;
-      }
-      
-      if (!comment.trim()) {
-        e.preventDefault();
-        showNotification('Please provide detailed feedback comments', 'warning');
-        return;
-      }
-      
-      if (comment.trim().length < 10) {
-        e.preventDefault();
-        showNotification('Please provide more detailed feedback (minimum 10 characters)', 'warning');
-        return;
-      }
-      
-      // Show loading state
-      const submitBtn = feedbackForm.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Submitting Feedback...';
+document.addEventListener('DOMContentLoaded', function() {
+  // Feedback modal
+  const feedbackModal = document.getElementById('feedbackModal');
+  if (feedbackModal) {
+    feedbackModal.addEventListener('show.bs.modal', function(event) {
+      // Modal is shown, no need for related target since we're using a button
     });
   }
 
-  // Utility functions
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+  // File Info modal handling
+  const fileInfoBtn = document.getElementById('fileInfoBtn');
+  const fileInfoModal = new bootstrap.Modal(document.getElementById('fileInfoModal'));
+  const fileInfoContent = document.getElementById('fileInfoContent');
+
+  if (fileInfoBtn) {
+    fileInfoBtn.addEventListener('click', function() {
+      const reportId = this.getAttribute('data-report-id');
+      loadFileInfo(reportId);
+    });
   }
 
-  function showNotification(message, type = 'info') {
-    // Remove existing notifications
-    const existingAlerts = document.querySelectorAll('.alert-dismissible');
-    existingAlerts.forEach(alert => alert.remove());
-    
-    const icons = {
-      'success': 'bi-check-circle-fill',
-      'error': 'bi-x-circle-fill', 
-      'warning': 'bi-exclamation-triangle-fill',
-      'info': 'bi-info-circle-fill'
-    };
-    
-    const alertClass = {
-      'success': 'alert-success',
-      'error': 'alert-danger',
-      'warning': 'alert-warning',
-      'info': 'alert-info'
-    }[type] || 'alert-info';
-    
-    const alertHtml = `
-      <div class="alert ${alertClass} alert-dismissible fade show position-fixed shadow" 
-           style="top: 20px; right: 20px; z-index: 9999; min-width: 350px; border: none;">
-        <div class="d-flex align-items-center">
-          <i class="${icons[type]} me-2 fs-5"></i>
-          <div class="flex-grow-1">${message}</div>
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', alertHtml);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-      const alert = document.querySelector('.alert-dismissible');
-      if (alert) {
-        bootstrap.Alert.getOrCreateInstance(alert).close();
+  // Move to next stage button
+  const moveNextStageBtn = document.getElementById('moveNextStageBtn');
+  if (moveNextStageBtn) {
+    moveNextStageBtn.addEventListener('click', function() {
+      const reportId = <%= typeof report !== 'undefined' ? report.id : 'null' %>;
+      if (reportId && confirm('Are you sure you want to advance this report to the next stage?')) {
+        fetch(`/supervisor/reports/${reportId}/move-next-stage`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            location.reload();
+          } else {
+            alert('Error: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while moving the report to the next stage');
+        });
       }
-    }, 5000);
+    });
   }
 
-  // PDF zoom functions
-  window.zoomPdf = function(direction) {
-    const frame = document.getElementById('pdfFrame');
-    if (!frame) return;
-    
-    let zoom = parseFloat(frame.style.zoom) || 1;
-    
-    switch(direction) {
-      case 'in':
-        zoom += 0.1;
-        break;
-      case 'out':
-        zoom = Math.max(0.5, zoom - 0.1);
-        break;
-      case 'reset':
-        zoom = 1;
-        break;
-    }
-    
-    frame.style.zoom = zoom;
-  };
+  // Form submission handling
+  const feedbackForm = document.getElementById('feedbackForm');
+  if (feedbackForm) {
+    feedbackForm.addEventListener('submit', function(e) {
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+      submitBtn.disabled = true;
+    });
+  }
 });
+
+// Load file information and display in modal
+function loadFileInfo(reportId) {
+  const fileInfoContent = document.getElementById('fileInfoContent');
+  
+  // Show loading state
+  fileInfoContent.innerHTML = `
+    <div class="text-center py-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading file information...</span>
+      </div>
+      <p class="mt-2 text-muted">Loading file information...</p>
+    </div>
+  `;
+
+  // Show modal
+  const fileInfoModal = new bootstrap.Modal(document.getElementById('fileInfoModal'));
+  fileInfoModal.show();
+
+  // Fetch file information
+  fetch(`/supervisor/files/info/${reportId}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const file = data.file;
+        fileInfoContent.innerHTML = `
+          <div class="row">
+            <div class="col-md-6">
+              <h6 class="fw-semibold text-muted mb-3">File Details</h6>
+              <div class="file-info-item">
+                <strong>File Name:</strong>
+                <div class="text-muted">${file.fileName}</div>
+              </div>
+              <div class="file-info-item">
+                <strong>File Size:</strong>
+                <div class="text-muted">${file.fileSize}</div>
+              </div>
+              <div class="file-info-item">
+                <strong>Report Title:</strong>
+                <div class="text-muted">${file.title}</div>
+              </div>
+              <div class="file-info-item">
+                <strong>Report Stage:</strong>
+                <div>
+                  <span class="badge bg-info">${file.reportStage.replace('_', ' ').toUpperCase()}</span>
+                </div>
+              </div>
+              <div class="file-info-item">
+                <strong>Status:</strong>
+                <div>
+                  ${getStatusBadge(file.status)}
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <h6 class="fw-semibold text-muted mb-3">Additional Information</h6>
+              <div class="file-info-item">
+                <strong>Student:</strong>
+                <div class="text-muted">${file.studentName}</div>
+              </div>
+              <div class="file-info-item">
+                <strong>Supervisor:</strong>
+                <div class="text-muted">${file.supervisorName}</div>
+              </div>
+              <div class="file-info-item">
+                <strong>Submitted:</strong>
+                <div class="text-muted">${new Date(file.submittedAt).toLocaleString()}</div>
+              </div>
+              <div class="file-info-item">
+                <strong>Feedback Count:</strong>
+                <div class="text-muted">${file.feedbackCount}</div>
+              </div>
+              <div class="file-info-item">
+                <strong>Editable:</strong>
+                <div>
+                  <span class="badge ${file.isEditable ? 'bg-success' : 'bg-secondary'}">
+                    ${file.isEditable ? 'Yes' : 'No'}
+                  </span>
+                </div>
+              </div>
+              <div class="file-info-item">
+                <strong>File Exists:</strong>
+                <div>
+                  <span class="badge ${file.fileStats.exists ? 'bg-success' : 'bg-danger'}">
+                    ${file.fileStats.exists ? 'Yes' : 'No'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          ${!file.fileStats.exists ? `
+            <div class="alert alert-warning mt-3">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              <strong>Warning:</strong> The physical file was not found on the server.
+            </div>
+          ` : ''}
+        `;
+      } else {
+        fileInfoContent.innerHTML = `
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Error:</strong> ${data.error || 'Failed to load file information'}
+          </div>
+        `;
+      }
+    })
+    .catch(error => {
+      console.error('Error loading file info:', error);
+      fileInfoContent.innerHTML = `
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Error:</strong> Failed to load file information. Please try again.
+        </div>
+      `;
+    });
+}
+
+// Helper function to generate status badges
+function getStatusBadge(status) {
+  const statusMap = {
+    'pending': { class: 'bg-warning text-dark', text: 'Pending', icon: 'clock' },
+    'approved': { class: 'bg-success', text: 'Approved', icon: 'check-circle' },
+    'rejected': { class: 'bg-danger', text: 'Rejected', icon: 'x-circle' },
+    'feedback_given': { class: 'bg-info', text: 'Feedback Given', icon: 'chat-text' }
+  };
+  
+  const statusInfo = statusMap[status] || { class: 'bg-secondary', text: status, icon: 'question' };
+  
+  return `<span class="badge ${statusInfo.class}">
+    <i class="bi bi-${statusInfo.icon} me-1"></i>${statusInfo.text}
+  </span>`;
+}
+
+function approveReport(reportId) {
+  if (confirm('Are you sure you want to approve this report?')) {
+    fetch(`/supervisor/reports/${reportId}/move-next-stage`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert('Error: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred while approving the report');
+    });
+  }
+}
 </script>

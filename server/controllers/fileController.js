@@ -1,13 +1,25 @@
 const fs = require('fs');
 const path = require('path');
 const db = require('../config/database');
-const { logActivity } = require('../utils/logger');
 
-// Configuration
+// Add missing logActivity function
+const logActivity = (userId, action, resourceType, resourceId = null) => {
+  try {
+    db.prepare(`
+      INSERT INTO activity_logs (user_id, action, resource_type, resource_id, timestamp)
+      VALUES (?, ?, ?, ?, datetime('now'))
+    `).run(userId, action, resourceType, resourceId);
+  } catch (error) {
+    console.error('Activity logging error:', error);
+  }
+};
+
+// File Configuration
 const FILE_CONFIG = {
-  MAX_FILE_SIZE: 50 * 1024 * 1024, // 50MB
+  MAX_FILE_SIZE: 50 * 1024 * 1024,
   ALLOWED_EXTENSIONS: ['pdf', 'txt', 'doc', 'docx', 'js', 'html', 'css', 'md', 'json', 'xml', 'py', 'java', 'cpp', 'c', 'php', 'jpg', 'jpeg', 'png', 'gif', 'zip', 'rar'],
   EDITABLE_EXTENSIONS: ['txt', 'js', 'html', 'css', 'md', 'json', 'xml', 'py', 'java', 'cpp', 'c', 'php'],
+  CODE_EXTENSIONS: ['js', 'html', 'css', 'py', 'java', 'cpp', 'c', 'php', 'xml', 'json'],
   MIME_TYPES: {
     pdf: 'application/pdf',
     txt: 'text/plain',
@@ -36,15 +48,24 @@ const FILE_CONFIG = {
 // Utility functions
 const FileUtils = {
   getFileExtension(filename) {
+    if (!filename) return '';
     return filename.toLowerCase().split('.').pop();
-  },
-
-  isValidFileType(extension) {
-    return FILE_CONFIG.ALLOWED_EXTENSIONS.includes(extension);
   },
 
   isEditableFile(extension) {
     return FILE_CONFIG.EDITABLE_EXTENSIONS.includes(extension);
+  },
+
+  isCodeFile(extension) {
+    return FILE_CONFIG.CODE_EXTENSIONS.includes(extension);
+  },
+
+  isPdfFile(extension) {
+    return extension === 'pdf';
+  },
+
+  isImageFile(extension) {
+    return ['jpg', 'jpeg', 'png', 'gif'].includes(extension);
   },
 
   getMimeType(extension) {
@@ -59,301 +80,413 @@ const FileUtils = {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   },
 
-  sanitizeFileName(filename) {
-    return filename.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  detectLanguage(extension) {
+    const languageMap = {
+      'js': 'javascript',
+      'html': 'html',
+      'css': 'css',
+      'py': 'python',
+      'java': 'java',
+      'cpp': 'cpp',
+      'c': 'c',
+      'php': 'php',
+      'xml': 'xml',
+      'json': 'json',
+      'md': 'markdown',
+      'txt': 'plaintext'
+    };
+    return languageMap[extension] || 'plaintext';
   }
 };
 
-// File Controller
-const FileController = {
-  /**
-   * Get file content for viewing/editing (supervisors)
-   */
-  getFileContent(req, res) {
-    try {
-      const { id } = req.params;
-      const supervisorId = req.session.user?.id;
+const getFileView = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const supervisorId = req.session.user?.id;
 
-      if (!id || !supervisorId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
+    if (!supervisorId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
-      const report = db.prepare(`
-        SELECT r.file_url, r.file_name 
-        FROM reports r 
-        WHERE r.id = ? AND r.supervisor_id = ?
-      `).get(id, supervisorId);
-
-      if (!report) {
-        return res.status(404).json({ error: 'File not found or unauthorized' });
-      }
-
-      try {
-        fs.accessSync(report.file_url);
-      } catch {
-        return res.status(404).json({ error: 'File not found on server' });
-      }
-
-      const fileExtension = FileUtils.getFileExtension(report.file_name);
-
-      if (!FileUtils.isEditableFile(fileExtension)) {
-        return res.status(400).json({ 
-          error: 'File format not viewable in editor',
-          redirect: `/supervisor/files/download/${id}`
-        });
-      }
-
-      const content = fs.readFileSync(report.file_url, 'utf8');
-      logActivity(supervisorId, `Viewed file: ${report.file_name}`, 'file', id);
-
-      res.set({
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Content-Length': Buffer.byteLength(content, 'utf8'),
-        'X-File-Name': report.file_name,
-        'X-File-Extension': fileExtension
+    // Simple file path resolution
+    const uploadsDir = path.join(__dirname, '..', 'public', 'uploads', 'reports');
+    
+    // Check if uploads directory exists
+    if (!fs.existsSync(uploadsDir)) {
+      return res.status(404).json({ 
+        error: 'Uploads directory not found'
       });
-
-      res.send(content);
-
-    } catch (error) {
-      console.error('Get File Content Error:', error);
-      res.status(500).json({ error: 'Failed to read file' });
     }
-  },
 
-  /**
-   * Update file content (supervisors)
-   */
-  updateFileContent(req, res) {
-    try {
-      const { id } = req.params;
-      const supervisorId = req.session.user?.id;
-      const content = req.body;
+    // Get all files in uploads directory
+    const availableFiles = fs.readdirSync(uploadsDir);
+    console.log('Available files:', availableFiles);
 
-      if (!id || !supervisorId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
+    // Try to find file by ID pattern
+    let targetFile = availableFiles.find(file => file.includes(id));
 
-      if (typeof content !== 'string') {
-        return res.status(400).json({ error: 'Invalid content format' });
-      }
-
-      const report = db.prepare(`
-        SELECT r.file_url, r.file_name 
-        FROM reports r 
-        WHERE r.id = ? AND r.supervisor_id = ?
-      `).get(id, supervisorId);
-
-      if (!report) {
-        return res.status(404).json({ error: 'File not found or unauthorized' });
-      }
-
-      const fileExtension = FileUtils.getFileExtension(report.file_name);
-      if (!FileUtils.isEditableFile(fileExtension)) {
-        return res.status(400).json({ error: 'File format not editable' });
-      }
-
-      const backupPath = `${report.file_url}.backup_${Date.now()}`;
-      try {
-        fs.copyFileSync(report.file_url, backupPath);
-      } catch (backupError) {
-        console.warn('Could not create backup:', backupError.message);
-      }
-
-      fs.writeFileSync(report.file_url, content, 'utf8');
-
-      const stats = fs.statSync(report.file_url);
-      db.prepare(
-        "UPDATE reports SET file_size = ?, updated_at = datetime('now') WHERE id = ?"
-      ).run(stats.size, id);
-
-      logActivity(supervisorId, `Updated file content: ${report.file_name}`, 'file', id);
-
-      res.json({ 
-        success: true, 
-        message: 'File updated successfully',
-        timestamp: new Date().toISOString(),
-        fileSize: FileUtils.formatFileSize(stats.size)
+    if (!targetFile) {
+      return res.status(404).json({ 
+        error: 'File not found',
+        availableFiles: availableFiles
       });
-
-    } catch (error) {
-      console.error('Update File Content Error:', error);
-      res.status(500).json({ error: 'Failed to update file' });
     }
-  },
 
-  /**
-   * Download file (supervisors)
-   */
-  downloadFile(req, res) {
-    try {
-      const { id } = req.params;
-      const supervisorId = req.session.user?.id;
+    const filePath = path.join(uploadsDir, targetFile);
+    const fileExtension = FileUtils.getFileExtension(targetFile);
 
-      if (!supervisorId) {
-        return res.status(401).render('error', { message: 'Authentication required', error: { status: 401 } });
-      }
+    console.log('Using file:', {
+      filePath,
+      targetFile,
+      fileExtension
+    });
 
-      const report = db.prepare(`
-        SELECT r.file_url, r.file_name
-        FROM reports r 
-        WHERE r.id = ? AND r.supervisor_id = ?
-      `).get(id, supervisorId);
-
-      if (!report) {
-        return res.status(404).render('error', { message: 'File not found or unauthorized', error: { status: 404 } });
-      }
-
-      try {
-        fs.accessSync(report.file_url);
-      } catch {
-        return res.status(404).render('error', { message: 'File not found on server', error: { status: 404 } });
-      }
-
-      const fileExtension = FileUtils.getFileExtension(report.file_name);
-      const mimeType = FileUtils.getMimeType(fileExtension);
-      const sanitizedFileName = FileUtils.sanitizeFileName(report.file_name);
-
-      res.setHeader('Content-Type', mimeType);
-      res.setHeader('Content-Disposition', `attachment; filename="${sanitizedFileName}"`);
-
-      const stats = fs.statSync(report.file_url);
-      res.setHeader('Content-Length', stats.size);
-      res.setHeader('Last-Modified', stats.mtime.toUTCString());
-
-      const fileStream = fs.createReadStream(report.file_url);
-      fileStream.on('error', (error) => {
-        console.error('File stream error:', error);
-        if (!res.headersSent) {
-          res.status(500).render('error', { message: 'Error streaming file', error: { status: 500 } });
-        }
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ 
+        error: 'File not found on server'
       });
-
-      fileStream.pipe(res);
-      logActivity(supervisorId, `Downloaded file: ${report.file_name}`, 'file', id);
-
-    } catch (error) {
-      console.error('Download File Error:', error);
-      res.status(500).render('error', { message: 'Failed to download file', error: process.env.NODE_ENV === 'development' ? error : {} });
     }
-  },
 
-  /**
-   * Get file information (supervisor/student)
-   */
-  getFileInfo(req, res) {
-    try {
-      const { id } = req.params;
-      const userId = req.session.user?.id;
-      const userRole = req.session.user?.role;
+    // Get file stats
+    const fileStats = fs.statSync(filePath);
 
-      if (!id || !userId) return res.status(401).json({ error: 'Authentication required' });
-
-      let report;
-      if (userRole === 'supervisor') {
-        report = db.prepare(`
-          SELECT r.*, s.full_name AS student_name, sup.full_name AS supervisor_name,
-          (SELECT COUNT(*) FROM feedback f WHERE f.report_id = r.id) AS feedback_count
-          FROM reports r
-          LEFT JOIN users s ON s.id = r.student_id
-          LEFT JOIN users sup ON sup.id = r.supervisor_id
-          WHERE r.id = ? AND r.supervisor_id = ?
-        `).get(id, userId);
-      } else if (userRole === 'student') {
-        report = db.prepare(`
-          SELECT r.*, s.full_name AS student_name, sup.full_name AS supervisor_name,
-          (SELECT COUNT(*) FROM feedback f WHERE f.report_id = r.id) AS feedback_count
-          FROM reports r
-          LEFT JOIN users s ON s.id = r.student_id
-          LEFT JOIN users sup ON sup.id = r.supervisor_id
-          WHERE r.id = ? AND r.student_id = ?
-        `).get(id, userId);
-      } else {
-        return res.status(403).json({ error: 'Access denied' });
-      }
-
-      if (!report) return res.status(404).json({ error: 'File not found or unauthorized' });
-
-      let fileStats = {};
+    // For PDF files, we need to provide the correct URL for the PDF.js viewer
+    let fileContent = '';
+    let fileLanguage = 'plaintext';
+    
+    if (FileUtils.isEditableFile(fileExtension)) {
       try {
-        const stats = fs.statSync(report.file_url);
-        fileStats = {
-          size: FileUtils.formatFileSize(stats.size),
-          modified: stats.mtime,
-          created: stats.birthtime,
-          exists: true
-        };
-      } catch {
-        fileStats.exists = false;
+        fileContent = fs.readFileSync(filePath, 'utf8');
+        fileLanguage = FileUtils.detectLanguage(fileExtension);
+      } catch (readError) {
+        console.error('Error reading file:', readError);
+        fileContent = 'Unable to read file content';
       }
-
-      res.json({
-        success: true,
-        file: {
-          id: report.id,
-          title: report.title,
-          fileName: report.file_name,
-          fileSize: FileUtils.formatFileSize(report.file_size),
-          mimeType: report.mime_type,
-          reportStage: report.report_stage,
-          status: report.status,
-          studentName: report.student_name,
-          supervisorName: report.supervisor_name,
-          submittedAt: report.submitted_at,
-          feedbackCount: report.feedback_count,
-          isEditable: FileUtils.isEditableFile(FileUtils.getFileExtension(report.file_name)),
-          fileStats
-        }
-      });
-
-    } catch (error) {
-      console.error('Get File Info Error:', error);
-      res.status(500).json({ error: 'Failed to get file information' });
     }
-  },
 
-  /**
-   * File preview (images/PDF)
-   */
-  getFilePreview(req, res) {
+    // Use the actual file name for display
+    const displayName = targetFile.replace(/^\d+-/, ''); // Remove timestamp prefix
+
+    // Render the file viewer page with CORRECT PDF URL
+    res.render('layouts/main', {
+      title: `View File - ${displayName}`,
+      view: '../supervisor/fileviewer',
+      user: req.session.user,
+      file: {
+        id: id,
+        name: displayName,
+        originalName: targetFile,
+        title: displayName.replace(/\.[^/.]+$/, ""), // Remove extension for title
+        studentName: 'Student',
+        extension: fileExtension,
+        content: fileContent,
+        language: fileLanguage,
+        isEditable: FileUtils.isEditableFile(fileExtension),
+        isCode: FileUtils.isCodeFile(fileExtension),
+        isPdf: FileUtils.isPdfFile(fileExtension),
+        isImage: FileUtils.isImageFile(fileExtension),
+        downloadUrl: `/supervisor/files/download/${id}`,
+        // FIX: Use direct public URL for PDF files
+        pdfDirectUrl: `/uploads/reports/${targetFile}`, // This is the key fix!
+        infoUrl: `/supervisor/files/info/${id}`,
+        fileSize: FileUtils.formatFileSize(fileStats.size),
+        modified: fileStats.mtime
+      }
+    });
+
+  } catch (error) {
+    console.error('File View Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to load file viewer'
+    });
+  }
+};
+// Update file content - FIXED
+const updateFileContent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const supervisorId = req.session.user?.id;
+    const { content } = req.body;
+
+    if (!supervisorId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    if (typeof content !== 'string') {
+      return res.status(400).json({ error: 'Invalid content format' });
+    }
+
+    const report = db.prepare(`
+      SELECT r.file_url, r.file_name 
+      FROM reports r 
+      WHERE r.id = ? AND r.supervisor_id = ?
+    `).get(id, supervisorId);
+
+    if (!report) {
+      return res.status(404).json({ error: 'File not found or unauthorized' });
+    }
+
+    // Resolve file path (same logic as getFileView)
+    let filePath;
+    if (report.file_url && report.file_url.startsWith('/uploads/')) {
+      filePath = path.join(__dirname, '..', 'public', report.file_url);
+    } else if (report.file_url) {
+      filePath = report.file_url;
+    }
+
+    if (!filePath || !fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found on server' });
+    }
+
+    // Check if file is editable
+    const fileExtension = FileUtils.getFileExtension(report.file_name);
+    if (!FileUtils.isEditableFile(fileExtension)) {
+      return res.status(400).json({ error: 'File format not editable' });
+    }
+
+    // Create backup before modification
+    const backupPath = `${filePath}.backup_${Date.now()}`;
     try {
-      const { id } = req.params;
-      const userId = req.session.user?.id;
-      const userRole = req.session.user?.role;
-
-      if (!id || !userId) return res.status(401).json({ error: 'Authentication required' });
-
-      let report;
-      if (userRole === 'supervisor') {
-        report = db.prepare(`SELECT r.file_url, r.file_name FROM reports r WHERE r.id = ? AND r.supervisor_id = ?`).get(id, userId);
-      } else if (userRole === 'student') {
-        report = db.prepare(`SELECT r.file_url, r.file_name FROM reports r WHERE r.id = ? AND r.student_id = ?`).get(id, userId);
-      } else {
-        return res.status(403).json({ error: 'Access denied' });
-      }
-
-      if (!report) return res.status(404).json({ error: 'File not found or unauthorized' });
-
-      const fileExtension = FileUtils.getFileExtension(report.file_name);
-      const previewableTypes = ['pdf', 'jpg', 'jpeg', 'png', 'gif'];
-
-      if (!previewableTypes.includes(fileExtension)) return res.status(400).json({ error: 'File type not previewable' });
-
-      try { fs.accessSync(report.file_url); } catch { return res.status(404).json({ error: 'File not found on server' }); }
-
-      const mimeType = FileUtils.getMimeType(fileExtension);
-      res.setHeader('Content-Type', mimeType);
-      res.setHeader('Content-Disposition', fileExtension === 'pdf' ? 'inline; filename="preview.pdf"' : 'inline');
-
-      const fileStream = fs.createReadStream(report.file_url);
-      fileStream.pipe(res);
-      logActivity(userId, `Previewed file: ${report.file_name}`, 'file', id);
-
-    } catch (error) {
-      console.error('File Preview Error:', error);
-      res.status(500).json({ error: 'Failed to generate file preview' });
+      fs.copyFileSync(filePath, backupPath);
+    } catch (backupError) {
+      console.warn('Could not create backup:', backupError.message);
     }
+
+    // Write new content
+    fs.writeFileSync(filePath, content, 'utf8');
+
+    // Update file size in database
+    const stats = fs.statSync(filePath);
+    db.prepare(
+      "UPDATE reports SET file_size = ?, updated_at = datetime('now') WHERE id = ?"
+    ).run(stats.size, id);
+
+    // Log the activity
+    logActivity(supervisorId, `Updated file content: ${report.file_name}`, 'file', id);
+
+    res.json({ 
+      success: true, 
+      message: 'File updated successfully',
+      timestamp: new Date().toISOString(),
+      fileSize: FileUtils.formatFileSize(stats.size),
+      backupCreated: fs.existsSync(backupPath)
+    });
+
+  } catch (error) {
+    console.error('Update File Content Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to update file'
+    });
   }
 };
 
-module.exports = FileController;
+// Download file - FIXED
+const downloadFile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const supervisorId = req.session.user?.id;
+
+    const report = db.prepare(`
+      SELECT r.*, u.full_name as student_name
+      FROM reports r 
+      INNER JOIN users u ON r.student_id = u.id
+      WHERE r.id = ? AND r.supervisor_id = ?
+    `).get(id, supervisorId);
+
+    if (!report) {
+      return res.status(404).render('error', {
+        message: 'File not found or you are not authorized to download it.',
+        error: { status: 404, stack: '' }
+      });
+    }
+
+    // Resolve file path (same logic as getFileView)
+    let filePath;
+    if (report.file_url && report.file_url.startsWith('/uploads/')) {
+      filePath = path.join(__dirname, '..', 'public', report.file_url);
+    } else if (report.file_url) {
+      filePath = report.file_url;
+    }
+
+    if (!filePath || !fs.existsSync(filePath)) {
+      return res.status(404).render('error', {
+        message: 'File not found on server. It may have been moved or deleted.',
+        error: { status: 404, stack: '' }
+      });
+    }
+
+    const fileExtension = FileUtils.getFileExtension(report.file_name);
+    const mimeType = FileUtils.getMimeType(fileExtension);
+    const sanitizedFileName = report.file_name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+
+    // Get file stats
+    const stats = fs.statSync(filePath);
+
+    // Set headers
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${sanitizedFileName}"`);
+    res.setHeader('Content-Length', stats.size);
+    res.setHeader('Last-Modified', stats.mtime.toUTCString());
+
+    // Stream file to response
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+
+    // Log download activity
+    logActivity(supervisorId, `Downloaded file: ${report.file_name}`, 'file', id);
+
+  } catch (error) {
+    console.error('Download File Error:', error);
+    res.status(500).render('error', {
+      message: 'Failed to download file. Please try again.',
+      error: { status: 500, stack: '' }
+    });
+  }
+};
+
+// Get file information - FIXED
+const getFileInfo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const supervisorId = req.session.user?.id;
+
+    if (!supervisorId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const report = db.prepare(`
+      SELECT 
+        r.*,
+        s.full_name as student_name,
+        sup.full_name as supervisor_name
+      FROM reports r
+      LEFT JOIN users s ON s.id = r.student_id
+      LEFT JOIN users sup ON sup.id = r.supervisor_id
+      WHERE r.id = ? AND r.supervisor_id = ?
+    `).get(id, supervisorId);
+
+    if (!report) {
+      return res.status(404).json({ error: 'File not found or unauthorized' });
+    }
+
+    // Get file stats and detect MIME type
+    const fileExtension = FileUtils.getFileExtension(report.file_name);
+    const mimeType = FileUtils.getMimeType(fileExtension);
+    
+    // Resolve file path
+    let filePath;
+    if (report.file_url && report.file_url.startsWith('/uploads/')) {
+      filePath = path.join(__dirname, '..', 'public', report.file_url);
+    } else if (report.file_url) {
+      filePath = report.file_url;
+    }
+
+    let fileStats = {};
+    try {
+      const stats = fs.statSync(filePath);
+      fileStats = {
+        size: FileUtils.formatFileSize(stats.size),
+        modified: stats.mtime,
+        created: stats.birthtime,
+        exists: true
+      };
+    } catch (error) {
+      fileStats.exists = false;
+    }
+
+    res.json({
+      success: true,
+      file: {
+        id: report.id,
+        title: report.title,
+        fileName: report.file_name,
+        fileSize: FileUtils.formatFileSize(report.file_size || 0),
+        mimeType: mimeType,
+        reportStage: report.report_stage,
+        status: report.status,
+        studentName: report.student_name,
+        supervisorName: report.supervisor_name,
+        submittedAt: report.submitted_at,
+        isEditable: FileUtils.isEditableFile(fileExtension),
+        fileStats: fileStats
+      }
+    });
+
+  } catch (error) {
+    console.error('Get File Info Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get file information'
+    });
+  }
+};
+
+// Get file preview - FIXED
+const getFilePreview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const supervisorId = req.session.user?.id;
+
+    if (!supervisorId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const report = db.prepare(`
+      SELECT r.file_url, r.file_name
+      FROM reports r 
+      WHERE r.id = ? AND r.supervisor_id = ?
+    `).get(id, supervisorId);
+
+    if (!report) {
+      return res.status(404).json({ error: 'File not found or unauthorized' });
+    }
+
+    const fileExtension = FileUtils.getFileExtension(report.file_name);
+    const previewableTypes = ['pdf', 'jpg', 'jpeg', 'png', 'gif'];
+
+    if (!previewableTypes.includes(fileExtension)) {
+      return res.status(400).json({ error: 'File type not previewable' });
+    }
+
+    // Resolve file path
+    let filePath;
+    if (report.file_url && report.file_url.startsWith('/uploads/')) {
+      filePath = path.join(__dirname, '..', 'public', report.file_url);
+    } else if (report.file_url) {
+      filePath = report.file_url;
+    }
+
+    // Check if file exists
+    if (!filePath || !fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found on server' });
+    }
+
+    const mimeType = FileUtils.getMimeType(fileExtension);
+    res.setHeader('Content-Type', mimeType);
+    
+    if (fileExtension === 'pdf') {
+      res.setHeader('Content-Disposition', 'inline; filename="preview.pdf"');
+    } else {
+      res.setHeader('Content-Disposition', 'inline');
+    }
+
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+
+    logActivity(supervisorId, `Previewed file: ${report.file_name}`, 'file', id);
+
+  } catch (error) {
+    console.error('File Preview Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate file preview'
+    });
+  }
+};
+
+module.exports = {
+  getFileView,
+  updateFileContent,
+  downloadFile,
+  getFileInfo,
+  getFilePreview
+};

@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' ? title : 'Assignments Management' %></title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Custom Styles -->
+    <style>
+        :root {
+            --buk-blue: #0d6efd;
+            --buk-dark: #212529;
+        }
+        
+        .table th {
+            font-weight: 600;
+            color: var(--buk-dark);
+        }
+
+        .badge {
+            font-weight: 500;
+        }
+
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        .page-title {
+            color: var(--buk-dark);
+            font-weight: 700;
+        }
+        
+        .page-subtitle {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .assignment-card {
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+
+        .assignment-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .stats-card {
+            border-left: 4px solid;
+            transition: transform 0.2s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .student-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .supervisor-avatar {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e9ecef;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -23px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--buk-blue);
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="page-title mb-1">
+                            <i class="bi bi-diagram-3 me-2"></i>Assignments Management
+                        </h1>
+                        <p class="page-subtitle mb-0">
+                            Manage student-supervisor assignments for <%= typeof level !== 'undefined' ? level : '' %> Level
+                        </p>
+                    </div>
+                    <div class="text-end">
+                        <div class="btn-group">
+                            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#bulkAssignModal">
+                                <i class="bi bi-people-fill me-1"></i>Bulk Assign
+                            </button>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#autoAssignModal">
+                                <i class="bi bi-magic me-1"></i>Auto Assign
+                            </button>
+                            <button class="btn btn-outline-secondary" id="refreshBtn">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <% if (typeof success !== 'undefined' && success) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i><%= success %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <% } %>
+        
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <% } %>
+
+        <!-- Assignment Statistics -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stats-card border-left-primary border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title text-muted mb-2">Total Students</h6>
+                                <h3 class="fw-bold text-primary mb-0"><%= totalStudents || 0 %></h3>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-3 rounded">
+                                <i class="bi bi-people-fill text-primary fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stats-card border-left-success border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title text-muted mb-2">Assigned</h6>
+                                <h3 class="fw-bold text-success mb-0"><%= assignedStudents || 0 %></h3>
+                                <small class="text-muted">
+                                    <%= totalStudents > 0 ? ((assignedStudents / totalStudents) * 100).toFixed(1) : 0 %>% assigned
+                                </small>
+                            </div>
+                            <div class="bg-success bg-opacity-10 p-3 rounded">
+                                <i class="bi bi-person-check text-success fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stats-card border-left-warning border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title text-muted mb-2">Unassigned</h6>
+                                <h3 class="fw-bold text-warning mb-0"><%= unassignedStudents || 0 %></h3>
+                                <small class="text-muted">
+                                    <%= totalStudents > 0 ? ((unassignedStudents / totalStudents) * 100).toFixed(1) : 0 %>% unassigned
+                                </small>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 p-3 rounded">
+                                <i class="bi bi-person-x text-warning fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stats-card border-left-info border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title text-muted mb-2">Available Capacity</h6>
+                                <h3 class="fw-bold text-info mb-0"><%= availableCapacity || 0 %></h3>
+                                <small class="text-muted">supervisor slots available</small>
+                            </div>
+                            <div class="bg-info bg-opacity-10 p-3 rounded">
+                                <i class="bi bi-person-badge text-info fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignment Overview -->
+        <div class="row">
+            <!-- Current Assignments -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0 fw-semibold">
+                            <i class="bi bi-list-check me-2"></i>Current Assignments
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <% if (currentAssignments && currentAssignments.length > 0) { %>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Student</th>
+                                            <th>Supervisor</th>
+                                            <th>Department</th>
+                                            <th>Assigned Date</th>
+                                            <th>Status</th>
+                                            <th class="text-end">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% currentAssignments.forEach(assignment => { 
+                                            const studentInitials = assignment.student_full_name.split(' ').map(n => n[0]).join('').toUpperCase();
+                                            const supervisorInitials = assignment.supervisor_full_name.split(' ').map(n => n[0]).join('').toUpperCase();
+                                        %>
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar student-avatar me-3">
+                                                            <%= studentInitials.substring(0, 2) %>
+                                                        </div>
+                                                        <div>
+                                                            <h6 class="mb-0 fw-semibold"><%= assignment.student_full_name %></h6>
+                                                            <small class="text-muted"><%= assignment.student_email %></small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar supervisor-avatar me-3">
+                                                            <%= supervisorInitials.substring(0, 2) %>
+                                                        </div>
+                                                        <div>
+                                                            <h6 class="mb-0 fw-semibold"><%= assignment.supervisor_full_name %></h6>
+                                                            <small class="text-muted"><%= assignment.supervisor_email %></small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-light text-dark border">
+                                                        <%= assignment.student_department || 'Not specified' %>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        <%= new Date(assignment.assigned_date).toLocaleDateString() %>
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle me-1"></i>Active
+                                                    </span>
+                                                </td>
+                                                <td class="text-end">
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button class="btn btn-outline-info"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#assignmentDetailsModal"
+                                                                data-assignment-id="<%= assignment.assignment_id %>">
+                                                            <i class="bi bi-eye"></i> View
+                                                        </button>
+                                                        <form action="/coordinator/unassign-student/<%= assignment.assignment_id %>" 
+                                                              method="POST" 
+                                                              class="d-inline">
+                                                            <button type="submit" 
+                                                                    class="btn btn-outline-danger"
+                                                                    onclick="return confirm('Unassign <%= assignment.student_full_name %> from <%= assignment.supervisor_full_name %>?')">
+                                                                <i class="bi bi-x-circle"></i> Unassign
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <% } else { %>
+                            <div class="text-center py-4">
+                                <i class="bi bi-diagram-3 display-1 text-muted opacity-25 mb-3"></i>
+                                <h4 class="text-muted">No Active Assignments</h4>
+                                <p class="text-muted">There are no active student-supervisor assignments.</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions & Unassigned Students -->
+            <div class="col-lg-4">
+                <!-- Quick Actions -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0 fw-semibold">
+                            <i class="bi bi-lightning me-2"></i>Quick Actions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary text-start" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#quickAssignModal">
+                                <i class="bi bi-person-plus me-2"></i>
+                                Quick Assign Student
+                            </button>
+                            <button class="btn btn-outline-success text-start"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#balanceAssignmentsModal">
+                                <i class="bi bi-arrow-left-right me-2"></i>
+                                Balance Assignments
+                            </button>
+                            <button class="btn btn-outline-warning text-start"
+                                    onclick="exportAssignments()">
+                                <i class="bi bi-download me-2"></i>
+                                Export Assignments
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unassigned Students -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0 fw-semibold">
+                            <i class="bi bi-person-x me-2"></i>Unassigned Students
+                            <span class="badge bg-warning ms-2"><%= unassignedStudents || 0 %></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <% if (unassignedStudentsList && unassignedStudentsList.length > 0) { %>
+                            <div class="list-group list-group-flush">
+                                <% unassignedStudentsList.forEach(student => { %>
+                                    <div class="list-group-item px-0 border-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1 fw-semibold"><%= student.full_name %></h6>
+                                                <small class="text-muted"><%= student.department || 'No department' %></small>
+                                            </div>
+                                            <button class="btn btn-primary btn-sm assign-btn"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#assignModal"
+                                                    data-student-id="<%= student.id %>"
+                                                    data-student-name="<%= student.full_name %>">
+                                                <i class="bi bi-person-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        <% } else { %>
+                            <div class="text-center py-3">
+                                <i class="bi bi-check-circle display-4 text-success opacity-25 mb-2"></i>
+                                <p class="text-muted mb-0">All students are assigned!</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignment History -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 fw-semibold">
+                    <i class="bi bi-clock-history me-2"></i>Assignment History
+                </h5>
+            </div>
+            <div class="card-body">
+                <% if (assignmentHistory && assignmentHistory.length > 0) { %>
+                    <div class="timeline">
+                        <% assignmentHistory.forEach(history => { %>
+                            <div class="timeline-item">
+                                <div class="card assignment-card border-0 shadow-sm mb-3">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-6">
+                                                <h6 class="fw-semibold mb-1">
+                                                    <%= history.student_full_name %> 
+                                                    <span class="text-muted">was assigned to</span> 
+                                                    <%= history.supervisor_full_name %>
+                                                </h6>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-calendar me-1"></i>
+                                                    <%= new Date(history.assigned_date).toLocaleDateString() %>
+                                                    <% if (history.end_date) { %>
+                                                        - <%= new Date(history.end_date).toLocaleDateString() %>
+                                                    <% } %>
+                                                </small>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <span class="badge <%= history.is_active ? 'bg-success' : 'bg-secondary' %>">
+                                                    <%= history.is_active ? 'Active' : 'Inactive' %>
+                                                </span>
+                                                <% if (history.end_reason) { %>
+                                                    <small class="text-muted ms-2"><%= history.end_reason %></small>
+                                                <% } %>
+                                            </div>
+                                            <div class="col-md-2 text-end">
+                                                <small class="text-muted">
+                                                    by <%= history.coordinator_name %>
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <div class="text-center py-4">
+                        <i class="bi bi-clock-history display-1 text-muted opacity-25 mb-3"></i>
+                        <h4 class="text-muted">No Assignment History</h4>
+                        <p class="text-muted">There is no assignment history available.</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Modal -->
+    <div class="modal fade" id="assignModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="/coordinator/assign-student" method="POST">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Assign Supervisor</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="studentId" id="studentIdField">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Student</label>
+                            <input type="text" id="studentNameField" class="form-control" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Select Supervisor</label>
+                            <select class="form-select" name="supervisorId" required>
+                                <option value="">Choose a supervisor...</option>
+                                <% if (availableSupervisors && availableSupervisors.length > 0) { 
+                                    availableSupervisors.forEach(supervisor => { %>
+                                    <option value="<%= supervisor.id %>">
+                                        <%= supervisor.full_name %> 
+                                        (<%= supervisor.assigned_count || 0 %>/<%= supervisor.max_students || 5 %> students)
+                                    </option>
+                                <% }); } %>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-plus me-1"></i>Assign Supervisor
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Assign Modal -->
+    <div class="modal fade" id="bulkAssignModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form action="/coordinator/bulk-assign" method="POST">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Bulk Assign Students</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Assign multiple students to supervisors at once. Students will be distributed evenly.
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Unassigned Students</label>
+                                    <div class="border rounded p-3 bg-light" style="max-height: 200px; overflow-y: auto;">
+                                        <% if (unassignedStudentsList && unassignedStudentsList.length > 0) { %>
+                                            <% unassignedStudentsList.forEach(student => { %>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" 
+                                                           name="studentIds" value="<%= student.id %>" 
+                                                           id="student<%= student.id %>">
+                                                    <label class="form-check-label" for="student<%= student.id %>">
+                                                        <%= student.full_name %> - <%= student.department || 'No department' %>
+                                                    </label>
+                                                </div>
+                                            <% }); %>
+                                        <% } else { %>
+                                            <p class="text-muted mb-0">No unassigned students available.</p>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Assignment Method</label>
+                                    <select class="form-select" name="assignmentMethod">
+                                        <option value="auto">Auto-distribute evenly</option>
+                                        <option value="manual">Manual selection</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Target Supervisors</label>
+                                    <select class="form-select" name="supervisorIds" multiple>
+                                        <% if (availableSupervisors && availableSupervisors.length > 0) { 
+                                            availableSupervisors.forEach(supervisor => { %>
+                                            <option value="<%= supervisor.id %>" selected>
+                                                <%= supervisor.full_name %> 
+                                                (<%= supervisor.available_slots || 0 %> slots available)
+                                            </option>
+                                        <% }); } %>
+                                    </select>
+                                    <div class="form-text">Hold Ctrl to select multiple supervisors</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-people-fill me-1"></i>Bulk Assign
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auto Assign Modal -->
+    <div class="modal fade" id="autoAssignModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="/coordinator/auto-assign" method="POST">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Auto-Assign Students</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            This will automatically assign all unassigned students to available supervisors based on capacity.
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Unassigned Students</label>
+                                    <div class="border rounded p-3 bg-light">
+                                        <h4 class="text-warning mb-0"><%= unassignedStudents || 0 %></h4>
+                                        <small class="text-muted">students waiting for assignment</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Available Capacity</label>
+                                    <div class="border rounded p-3 bg-light">
+                                        <h4 class="text-success mb-0"><%= availableCapacity || 0 %></h4>
+                                        <small class="text-muted">supervisor slots available</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Assignment Strategy</label>
+                            <select class="form-select" name="strategy">
+                                <option value="even">Even Distribution</option>
+                                <option value="fill">Fill Existing First</option>
+                                <option value="department">Match by Department</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-magic me-1"></i>Run Auto-Assignment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap & JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Assign modal handling
+        const assignModal = document.getElementById('assignModal');
+        if (assignModal) {
+            assignModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const studentId = button.getAttribute('data-student-id');
+                const studentName = button.getAttribute('data-student-name');
+
+                document.getElementById('studentIdField').value = studentId;
+                document.getElementById('studentNameField').value = studentName;
+            });
+        }
+
+        // Refresh button
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Refreshing...';
+                this.disabled = true;
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            });
+        }
+
+        // Export assignments function
+        window.exportAssignments = function() {
+            window.location.href = '/coordinator/export-assignments';
+        };
+    });
+    </script>
+</body>
+</html>

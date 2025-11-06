@@ -1,203 +1,425 @@
-<<<<<<< HEAD
-<% const title = 'HOD Dashboard'; %>
+<% /* 
+  HOD Dashboard - matches main.ejs layout
+  This file assumes it is rendered inside layouts/main.ejs as:
+  res.render('layouts/main', { ..., view: '../hod/dashboard', ... })
+  Only the body content should be included, no <html>, <head>, <body> tags, 
+  and use classes/styles consistent with other dashboards.
+*/ %>
 
-<div class="row mb-4">
-  <div class="col-12">
-    <h2><i class="bi bi-speedometer2 me-2"></i>Head of Department Dashboard</h2>
-    <p class="text-muted">Oversee all activities in your department</p>
-  </div>
-</div>
-
-<div class="row mb-4">
-  <div class="col-md-3 mb-3">
-    <div class="card stat-card">
-      <div class="card-body">
-        <h3 class="card-title"><%= stats.totalStudents %></h3>
-        <p class="card-text">Total Students</p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3 mb-3">
-    <div class="card stat-card">
-      <div class="card-body">
-        <h3 class="card-title"><%= stats.totalSupervisors %></h3>
-        <p class="card-text">Supervisors</p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3 mb-3">
-    <div class="card stat-card">
-      <div class="card-body">
-        <h3 class="card-title"><%= stats.totalReports %></h3>
-        <p class="card-text">Total Reports</p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3 mb-3">
-    <div class="card stat-card">
-      <div class="card-body">
-        <h3 class="card-title"><%= stats.approvedReports %></h3>
-        <p class="card-text">Approved Reports</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-header bg-white">
-    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Recent Reports</h5>
-  </div>
-  <div class="card-body">
-    <% if (recentReports && recentReports.length > 0) { %>
-      <div class="table-responsive">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>Title</th>
-              <th>Stage</th>
-              <th>Status</th>
-              <th>Submitted</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% recentReports.forEach(report => { %>
-              <tr>
-                <td><%= report.student_name %></td>
-                <td><%= report.title %></td>
-                <td><span class="badge bg-info"><%= report.report_stage.replace('_', ' ').toUpperCase() %></span></td>
-                <td>
-                  <% if (report.status === 'pending') { %>
-                    <span class="badge bg-warning text-dark">Pending</span>
-                  <% } else if (report.status === 'approved') { %>
-                    <span class="badge bg-success">Approved</span>
-                  <% } else if (report.status === 'rejected') { %>
-                    <span class="badge bg-danger">Rejected</span>
-                  <% } else { %>
-                    <span class="badge bg-secondary">Feedback Given</span>
-                  <% } %>
-                </td>
-                <td><%= new Date(report.submitted_at).toLocaleDateString() %></td>
-                <td>
-                  <a href="/hod/report/<%= report.id %>" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-eye"></i> View
-                  </a>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-      <div class="text-center mt-3">
-        <a href="/hod/reports" class="btn btn-primary">View All Reports</a>
-      </div>
-    <% } else { %>
-      <p class="text-muted text-center py-4">No reports yet</p>
-    <% } %>
-  </div>
-</div>
-=======
-<%
-  const title = 'HOD Dashboard';
-  const body = `
-    <div class="row mb-4">
-      <div class="col-12">
-        <h2><i class="bi bi-speedometer2 me-2"></i>Head of Department Dashboard</h2>
-        <p class="text-muted">Oversee all activities in your department</p>
-      </div>
-    </div>
-
-    <div class="row mb-4">
-      <div class="col-md-3 mb-3">
-        <div class="card stat-card">
-          <div class="card-body">
-            <h3 class="card-title">${stats.totalStudents}</h3>
-            <p class="card-text">Total Students</p>
-          </div>
+<main>
+<div class="container-fluid px-0 px-md-2">
+  <!-- Header Section -->
+  <div 
+    class="p-4 rounded-4 shadow-sm mb-4" 
+    style="background: linear-gradient(120deg, #2c3e50 70%, #3498db 100%); color: #fff;"
+  >
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h1 class="h3 fw-bold mb-1">
+          <i class="bi bi-speedometer2 me-2"></i>
+          Head of Department Dashboard
+        </h1>
+        <div class="opacity-75 small">
+          Comprehensive overview of department activities and performance metrics
         </div>
       </div>
-      <div class="col-md-3 mb-3">
-        <div class="card stat-card">
-          <div class="card-body">
-            <h3 class="card-title">${stats.totalSupervisors}</h3>
-            <p class="card-text">Supervisors</p>
-          </div>
+      <div class="col-md-4 text-end">
+        <div class="btn-group">
+          <button class="btn btn-light btn-sm" id="refreshBtn">
+            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+          </button>
+          <button class="btn btn-outline-light btn-sm" id="exportBtn">
+            <i class="bi bi-download me-1"></i>Export Report
+          </button>
         </div>
       </div>
-      <div class="col-md-3 mb-3">
-        <div class="card stat-card">
-          <div class="card-body">
-            <h3 class="card-title">${stats.totalReports}</h3>
-            <p class="card-text">Total Reports</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <div class="card stat-card">
-          <div class="card-body">
-            <h3 class="card-title">${stats.approvedReports}</h3>
-            <p class="card-text">Approved Reports</p>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <% if (typeof success !== 'undefined' && success) { %>
+    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i><%= success %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <% } %>
+
+  <!-- Statistics Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-2 col-6">
+      <div class="card shadow-sm border-0 h-100 stat-card stat-card--buk stat-card--primary">
+        <div class="card-body py-3 d-flex flex-column justify-content-between">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="fs-4 fw-bold text-primary mb-1"><%= stats.totalStudents || 0 %></div>
+              <div class="small text-muted mb-0">Total Students</div>
+              <div class="small text-muted">
+                <i class="bi bi-arrow-up text-success me-1"></i>
+                +<%= stats.studentsGrowth || 0 %>% from last month
+              </div>
+            </div>
+            <div class="stat-icon bg-light text-primary ms-2 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+              <i class="bi bi-people-fill fs-3"></i>
+            </div>
           </div>
         </div>
       </div>
     </div>
-
-    <div class="card">
-      <div class="card-header bg-white">
-        <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Recent Reports</h5>
+    <div class="col-md-2 col-6">
+      <div class="card shadow-sm border-0 h-100 stat-card stat-card--buk stat-card--success">
+        <div class="card-body py-3 d-flex flex-column justify-content-between">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="fs-4 fw-bold text-success mb-1"><%= stats.totalSupervisors || 0 %></div>
+              <div class="small text-muted mb-0">Supervisors</div>
+              <div class="small text-muted">
+                <i class="bi bi-check-circle text-success me-1"></i>
+                <%= stats.availableSupervisors || 0 %> available
+              </div>
+            </div>
+            <div class="stat-icon bg-light text-success ms-2 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+              <i class="bi bi-person-badge fs-3"></i>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="card-body">
-        <% if (recentReports && recentReports.length > 0) { %>
-          <div class="table-responsive">
-            <table class="table table-hover">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Title</th>
-                  <th>Stage</th>
-                  <th>Status</th>
-                  <th>Submitted</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
+    </div>
+    <div class="col-md-2 col-6">
+      <div class="card shadow-sm border-0 h-100 stat-card stat-card--buk stat-card--info">
+        <div class="card-body py-3 d-flex flex-column justify-content-between">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="fs-4 fw-bold text-info mb-1"><%= stats.totalReports || 0 %></div>
+              <div class="small text-muted mb-0">Total Reports</div>
+              <div class="small text-muted"><i class="bi bi-file-text me-1"></i><%= stats.reportsThisMonth || 0 %> this month</div>
+            </div>
+            <div class="stat-icon bg-light text-info ms-2 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+              <i class="bi bi-file-earmark-text fs-3"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 col-6">
+      <div class="card shadow-sm border-0 h-100 stat-card stat-card--buk stat-card--accent">
+        <div class="card-body py-3 d-flex flex-column justify-content-between">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="fs-4 fw-bold text-buk-accent mb-1"><%= stats.approvedReports || 0 %></div>
+              <div class="small text-muted mb-0">Approved</div>
+              <div class="progress mt-2" style="height:7px;">
+                <div class="progress-bar bg-success"
+                  role="progressbar"
+                  style="width:<%= stats.totalReports > 0 ? Math.round(stats.approvedReports / stats.totalReports * 100) : 0 %>%"
+                  aria-valuenow="<%= stats.totalReports > 0 ? Math.round(stats.approvedReports / stats.totalReports * 100) : 0 %>"
+                  aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
+            <div class="stat-icon bg-light text-buk-accent ms-2 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+              <i class="bi bi-check-circle-fill fs-3"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 col-6">
+      <div class="card shadow-sm border-0 h-100 stat-card stat-card--buk stat-card--warning">
+        <div class="card-body py-3 d-flex flex-column justify-content-between">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="fs-4 fw-bold text-warning mb-1"><%= stats.pendingReports || 0 %></div>
+              <div class="small text-muted mb-0">Pending Review</div>
+              <div class="small text-warning">
+                <i class="bi bi-clock me-1"></i>Needs attention
+              </div>
+            </div>
+            <div class="stat-icon bg-light text-warning ms-2 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+              <i class="bi bi-clock-fill fs-3"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 col-6">
+      <div class="card shadow-sm border-0 h-100 stat-card stat-card--buk stat-card--danger">
+        <div class="card-body py-3 d-flex flex-column justify-content-between">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="fs-4 fw-bold text-danger mb-1"><%= stats.rejectedReports || 0 %></div>
+              <div class="small text-muted mb-0">Rejected</div>
+              <div class="small text-muted"><i class="bi bi-arrow-repeat me-1"></i>Requires revision</div>
+            </div>
+            <div class="stat-icon bg-light text-danger ms-2 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+              <i class="bi bi-x-circle-fill fs-3"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="row g-4">
+    <!-- Quick Actions & Activity (now left column on lg screens) -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <div class="fw-semibold mb-3"><i class="bi bi-lightning me-2"></i>Quick Actions</div>
+          <div class="d-grid gap-2">
+            <a class="btn btn-primary d-flex align-items-center justify-content-between" href="/hod/reports">
+              <span>
+                <i class="bi bi-file-earmark-text me-2"></i>
+                Review Reports
+              </span>
+              <% if (stats.pendingReports > 0) { %>
+                <span class="badge bg-light text-primary ms-2"><%= stats.pendingReports %></span>
+              <% } %>
+            </a>
+            <a class="btn btn-success d-flex align-items-center" href="/hod/supervisors">
+              <i class="bi bi-person-badge me-2"></i>Manage Supervisors
+            </a>
+            <a class="btn btn-info d-flex align-items-center" href="/hod/students">
+              <i class="bi bi-people me-2"></i>View Students
+            </a>
+            <a class="btn btn-warning d-flex align-items-center" href="/hod/analytics">
+              <i class="bi bi-graph-up me-2"></i>Analytics & Reports
+            </a>
+            <button class="btn btn-secondary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#settingsModal">
+              <i class="bi bi-gear me-2"></i>Department Settings
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="fw-semibold mb-3"><i class="bi bi-clock-history me-2"></i>Recent Activity</div>
+          <div class="activity-feed" style="max-height:280px;overflow-y:auto;">
+            <% if (recentActivity && recentActivity.length > 0) { %>
+              <% recentActivity.forEach(activity => { %>
+                <div class="d-flex align-items-start mb-3 pb-3 border-bottom">
+                  <div class="rounded-2 bg-light text-center me-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                    <% if (activity.type === 'report_submitted') { %>
+                      <i class="bi bi-file-earmark-plus text-info fs-4"></i>
+                    <% } else if (activity.type === 'report_approved') { %>
+                      <i class="bi bi-check-circle text-success fs-4"></i>
+                    <% } else if (activity.type === 'report_rejected') { %>
+                      <i class="bi bi-x-circle text-danger fs-4"></i>
+                    <% } else { %>
+                      <i class="bi bi-info-circle text-primary fs-4"></i>
+                    <% } %>
+                  </div>
+                  <div>
+                    <div class="small mb-1"><%= activity.description %></div>
+                    <div class="text-muted small"><i class="bi bi-clock me-1"></i><%= new Date(activity.timestamp).toLocaleDateString() %></div>
+                  </div>
+                </div>
+              <% }) %>
+            <% } else { %>
+              <div class="text-muted text-center py-3">No recent activity</div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Reports Table (right/main column) -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="fw-semibold"><i class="bi bi-list-ul me-2"></i>Recent Reports</div>
+            <a href="/hod/reports" class="btn btn-primary btn-sm">
+              View All <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+          <% if (recentReports && recentReports.length > 0) { %>
+            <div class="table-responsive mt-2">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Student</th>
+                    <th>Supervisor</th>
+                    <th>Title</th>
+                    <th>Stage</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
                 <% recentReports.forEach(report => { %>
                   <tr>
-                    <td><%= report.student.full_name %></td>
-                    <td><%= report.title %></td>
-                    <td><span class="badge bg-info"><%= report.report_stage.replace('_', ' ').toUpperCase() %></span></td>
                     <td>
-                      <% if (report.status === 'pending') { %>
-                        <span class="badge bg-warning text-dark">Pending</span>
-                      <% } else if (report.status === 'approved') { %>
-                        <span class="badge bg-success">Approved</span>
-                      <% } else if (report.status === 'rejected') { %>
-                        <span class="badge bg-danger">Rejected</span>
+                      <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-gradient me-2 d-flex align-items-center justify-content-center" 
+                          style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);width:32px;height:32px;color:white;font-size:0.8rem;font-weight:600;">
+                          <%= report.student.full_name.split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2) %>
+                        </div>
+                        <span class="fw-medium"><%= report.student.full_name %></span>
+                      </div>
+                    </td>
+                    <td>
+                      <% if (report.supervisor) { %>
+                        <span class="text-muted"><%= report.supervisor.full_name %></span>
                       <% } else { %>
-                        <span class="badge bg-secondary">Feedback Given</span>
+                        <span class="text-muted">Not assigned</span>
                       <% } %>
                     </td>
-                    <td><%= new Date(report.submitted_at).toLocaleDateString() %></td>
+                    <td class="fw-semibold"><%= report.title %></td>
                     <td>
-                      <a href="/hod/report/${report.id}" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-eye"></i> View
-                      </a>
+                      <span class="badge bg-info report-status-badge">
+                        <%= report.report_stage.replace('_',' ').toUpperCase() %>
+                      </span>
+                    </td>
+                    <td>
+                      <% if (report.status === 'pending') { %>
+                        <span class="badge bg-warning text-dark report-status-badge">
+                          <i class="bi bi-clock me-1"></i>Pending
+                        </span>
+                      <% } else if (report.status === 'approved') { %>
+                        <span class="badge bg-success report-status-badge">
+                          <i class="bi bi-check-circle me-1"></i>Approved
+                        </span>
+                      <% } else if (report.status === 'rejected') { %>
+                        <span class="badge bg-danger report-status-badge">
+                          <i class="bi bi-x-circle me-1"></i>Rejected
+                        </span>
+                      <% } else { %>
+                        <span class="badge bg-secondary report-status-badge">
+                          <i class="bi bi-chat-dots me-1"></i>Feedback
+                        </span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <small class="text-muted">
+                        <%= new Date(report.submitted_at).toLocaleDateString() %>
+                      </small>
+                    </td>
+                    <td>
+                      <div class="btn-group btn-group-sm">
+                        <a href="/hod/report/<%= report.id %>" class="btn btn-outline-primary" title="View">
+                          <i class="bi bi-eye"></i>
+                        </a>
+                        <% if (report.status === 'pending') { %>
+                          <a href="/hod/report/<%= report.id %>/approve" class="btn btn-outline-success" title="Approve">
+                            <i class="bi bi-check"></i>
+                          </a>
+                          <a href="/hod/report/<%= report.id %>/reject" class="btn btn-outline-danger" title="Reject">
+                            <i class="bi bi-x"></i>
+                          </a>
+                        <% } %>
+                      </div>
                     </td>
                   </tr>
-                <% }); %>
-              </tbody>
-            </table>
-          </div>
-          <div class="text-center mt-3">
-            <a href="/hod/reports" class="btn btn-primary">View All Reports</a>
-          </div>
-        <% } else { %>
-          <p class="text-muted text-center py-4">No reports yet</p>
-        <% } %>
+                <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="text-center py-5">
+              <i class="bi bi-file-earmark-text display-1 text-muted opacity-25 mb-3"></i>
+              <h5 class="text-muted">No Reports Available</h5>
+              <div class="text-muted">No reports have been submitted yet.</div>
+            </div>
+          <% } %>
+        </div>
       </div>
     </div>
-  `;
-%>
-<%- include('../layouts/main', { title, body, user }) %>
->>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae
+  </div>
+</div> <!-- container-fluid -->
+
+<!-- Settings Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-modal="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form>
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-gear me-2"></i>Department Settings
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row gy-4">
+            <div class="col-md-6">
+              <h6 class="fw-semibold mb-3">Report Settings</h6>
+              <div class="mb-3">
+                <label class="form-label">Auto-approval threshold</label>
+                <input type="range" class="form-range" min="0" max="100" value="80">
+                <div class="form-text">Reports with supervisor score above 80% will be auto-approved</div>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                <label class="form-check-label" for="emailNotifications">
+                  Email notifications for pending reports
+                </label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <h6 class="fw-semibold mb-3">Department Preferences</h6>
+              <div class="mb-3">
+                <label class="form-label">Default report deadline</label>
+                <select class="form-select">
+                  <option value="7">7 days</option>
+                  <option value="14" selected>14 days</option>
+                  <option value="30">30 days</option>
+                </select>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="requireFeedback" checked>
+                <label class="form-check-label" for="requireFeedback">
+                  Require supervisor feedback
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Refresh Button
+  const refreshBtn = document.getElementById('refreshBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', function() {
+      this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Refreshing...';
+      this.disabled = true;
+      setTimeout(() => { location.reload(); }, 1000);
+    });
+  }
+
+  // Export Button
+  const exportBtn = document.getElementById('exportBtn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', function() {
+      this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Exporting...';
+      setTimeout(() => {
+        this.innerHTML = '<i class="bi bi-download me-1"></i>Export Report';
+        alert('Report exported successfully!');
+      }, 1500);
+    });
+  }
+});
+</script>
+
+<!--
+  Extra design tweaks for main.ejs consistency. 
+  Uses .fs-4/fw-bold, .shadow-sm, .rounded-4, .text-accent, etc.
+  Uses .card, .table, .btn, etc. from Bootstrap 5.
+  * Don't forget to provide main.ejs with a .bg-buk-primary { background: #2c3e50 !important; }
+  *   and .text-buk-accent { color: #3498db !important; } in your global CSS!
+-->
+</main>

@@ -1,0 +1,513 @@
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h1 class="page-title mb-1">
+              <i class="bi bi-file-earmark-text-fill me-2"></i>All Reports
+            </h1>
+            <p class="page-subtitle mb-0">Manage and review all research reports from your students</p>
+          </div>
+          <div class="text-end">
+            <span class="badge bg-primary fs-6">
+              <i class="bi bi-files me-1"></i>
+              <%= typeof reports !== 'undefined' ? reports.length : 0 %> Reports
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Alert Messages -->
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i><%= success %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% } %>
+    
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% } %>
+  
+    <!-- Statistics Overview -->
+    <div class="row mb-4">
+      <div class="col-xl-2 col-md-4 col-6 mb-4">
+        <div class="card stat-card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h3 class="card-title fw-bold text-dark mb-1"><%= typeof stats !== 'undefined' ? stats.totalReports : 0 %></h3>
+                <p class="card-text text-muted mb-0">Total Reports</p>
+              </div>
+              <div class="flex-shrink-0">
+                <div class="bg-primary bg-opacity-10 p-3 rounded">
+                  <i class="bi bi-file-earmark-text text-primary fs-4"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-xl-2 col-md-4 col-6 mb-4">
+        <div class="card stat-card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h3 class="card-title fw-bold text-dark mb-1"><%= typeof stats !== 'undefined' ? stats.pendingReports : 0 %></h3>
+                <p class="card-text text-muted mb-0">Pending Review</p>
+              </div>
+              <div class="flex-shrink-0">
+                <div class="bg-warning bg-opacity-10 p-3 rounded">
+                  <i class="bi bi-clock-history text-warning fs-4"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-xl-2 col-md-4 col-6 mb-4">
+        <div class="card stat-card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h3 class="card-title fw-bold text-dark mb-1"><%= typeof stats !== 'undefined' ? stats.approvedReports : 0 %></h3>
+                <p class="card-text text-muted mb-0">Approved</p>
+              </div>
+              <div class="flex-shrink-0">
+                <div class="bg-success bg-opacity-10 p-3 rounded">
+                  <i class="bi bi-check-circle text-success fs-4"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-xl-2 col-md-4 col-6 mb-4">
+        <div class="card stat-card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h3 class="card-title fw-bold text-dark mb-1"><%= typeof stats !== 'undefined' ? stats.rejectedReports : 0 %></h3>
+                <p class="card-text text-muted mb-0">Rejected</p>
+              </div>
+              <div class="flex-shrink-0">
+                <div class="bg-danger bg-opacity-10 p-3 rounded">
+                  <i class="bi bi-x-circle text-danger fs-4"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <div class="col-xl-2 col-md-4 col-6 mb-4">
+        <div class="card stat-card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h3 class="card-title fw-bold text-dark mb-1"><%= typeof stats !== 'undefined' ? stats.feedbackGiven : 0 %></h3>
+                <p class="card-text text-muted mb-0">Feedback Given</p>
+              </div>
+              <div class="flex-shrink-0">
+                <div class="bg-info bg-opacity-10 p-3 rounded">
+                  <i class="bi bi-chat-text text-info fs-4"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <div class="col-xl-2 col-md-4 col-6 mb-4">
+        <div class="card stat-card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h3 class="card-title fw-bold text-dark mb-1"><%= typeof stats !== 'undefined' ? stats.totalStudents : 0 %></h3>
+                <p class="card-text text-muted mb-0">Total Students</p>
+              </div>
+              <div class="flex-shrink-0">
+                <div class="bg-secondary bg-opacity-10 p-3 rounded">
+                  <i class="bi bi-people-fill text-secondary fs-4"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Filters and Search -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <form id="filterForm" method="GET" class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Status</label>
+            <select class="form-select" name="status" id="statusFilter">
+              <option value="all" <%= filters && filters.status === 'all' ? 'selected' : '' %>>All Statuses</option>
+              <option value="pending" <%= filters && filters.status === 'pending' ? 'selected' : '' %>>Pending</option>
+              <option value="approved" <%= filters && filters.status === 'approved' ? 'selected' : '' %>>Approved</option>
+              <option value="rejected" <%= filters && filters.status === 'rejected' ? 'selected' : '' %>>Rejected</option>
+              <option value="feedback_given" <%= filters && filters.status === 'feedback_given' ? 'selected' : '' %>>Feedback Given</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Report Stage</label>
+            <select class="form-select" name="stage" id="stageFilter">
+              <option value="all" <%= filters && filters.stage === 'all' ? 'selected' : '' %>>All Stages</option>
+              <option value="progress_1" <%= filters && filters.stage === 'progress_1' ? 'selected' : '' %>>Progress 1</option>
+              <option value="progress_2" <%= filters && filters.stage === 'progress_2' ? 'selected' : '' %>>Progress 2</option>
+              <option value="progress_3" <%= filters && filters.stage === 'progress_3' ? 'selected' : '' %>>Progress 3</option>
+              <option value="final" <%= filters && filters.stage === 'final' ? 'selected' : '' %>>Final</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Search</label>
+            <div class="input-group">
+              <input type="text" class="form-control" name="search" placeholder="Search reports..." value="<%= filters && filters.search ? filters.search : '' %>">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i>
+              </button>
+              <% if (filters && (filters.status !== 'all' || filters.stage !== 'all' || filters.search)) { %>
+                <a href="/supervisor/reports" class="btn btn-outline-secondary">
+                  <i class="bi bi-arrow-clockwise"></i>
+                </a>
+              <% } %>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  
+    <!-- Reports Table -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-table me-2 text-primary"></i>Research Reports
+          </h5>
+          <div class="text-muted small">
+            Showing <%= typeof reports !== 'undefined' ? reports.length : 0 %> reports
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <% if (typeof reports !== 'undefined' && reports.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle" id="reportsTable">
+              <thead class="table-light">
+                <tr>
+                  <th class="border-0">Report Details</th>
+                  <th class="border-0">Student</th>
+                  <th class="border-0">Stage</th>
+                  <th class="border-0">Status</th>
+                  <th class="border-0">Submitted</th>
+                  <th class="border-0 text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% reports.forEach(report => { %>
+                  <tr class="report-row" data-status="<%= report.status %>" data-stage="<%= report.report_stage %>">
+                    <td>
+                      <div class="d-flex align-items-start">
+                        <div class="flex-shrink-0 me-3">
+                          <i class="bi bi-file-earmark-text fs-4 text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                          <h6 class="fw-semibold mb-1 text-truncate" style="max-width: 250px;" title="<%= report.title %>">
+                            <%= report.title %>
+                          </h6>
+                          <div class="small text-muted">
+                            <i class="bi bi-hash me-1"></i>ID: <%= report.id %>
+                            <% if (report.feedback_count > 0) { %>
+                              <span class="ms-2">
+                                <i class="bi bi-chat-text me-1"></i><%= report.feedback_count %> feedback
+                              </span>
+                            <% } %>
+                            <% if (report.hod_feedback_count > 0) { %>
+                              <span class="ms-2">
+                                <i class="bi bi-star me-1"></i>HOD reviewed
+                              </span>
+                            <% } %>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="fw-semibold"><%= report.student_name %></div>
+                      <div class="small text-muted">
+                        <%= report.registration_number || 'N/A' %>
+                      </div>
+                      <div class="small">
+                        <span class="badge bg-light text-dark border">
+                          <%= report.level %> • <%= report.department %>
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                        <%= report.report_stage.replace('_', ' ').toUpperCase() %>
+                      </span>
+                    </td>
+                    <td>
+                      <% if (report.status === 'pending') { %>
+                        <span class="badge bg-warning text-dark">
+                          <i class="bi bi-clock me-1"></i>Pending
+                        </span>
+                      <% } else if (report.status === 'approved') { %>
+                        <span class="badge bg-success">
+                          <i class="bi bi-check-circle me-1"></i>Approved
+                        </span>
+                      <% } else if (report.status === 'rejected') { %>
+                        <span class="badge bg-danger">
+                          <i class="bi bi-x-circle me-1"></i>Rejected
+                        </span>
+                      <% } else { %>
+                        <span class="badge bg-info">
+                          <i class="bi bi-chat-text me-1"></i>Feedback Given
+                        </span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <div class="small">
+                        <div class="fw-semibold"><%= new Date(report.submitted_at).toLocaleDateString() %></div>
+                        <div class="text-muted"><%= new Date(report.submitted_at).toLocaleTimeString() %></div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                          <i class="bi bi-gear me-1"></i>Actions
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                          <li>
+                            <a class="dropdown-item" href="/supervisor/report/<%= report.id %>">
+                              <i class="bi bi-eye me-2"></i>Review Report
+                            </a>
+                          </li>
+                          <li>
+                            <a class="dropdown-item" href="/supervisor/files/view/<%= report.id %>">
+                              <i class="bi bi-file-text me-2"></i>View File
+                            </a>
+                          </li>
+                          <li>
+                            <a class="dropdown-item" href="/supervisor/files/download/<%= report.id %>">
+                              <i class="bi bi-download me-2"></i>Download
+                            </a>
+                          </li>
+                          <li><hr class="dropdown-divider"></li>
+                          <% if (report.status === 'pending') { %>
+                            <li>
+                              <a class="dropdown-item text-success" href="#" onclick="approveReport(<%= report.id %>)">
+                                <i class="bi bi-check-circle me-2"></i>Approve
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item text-warning" href="#" data-bs-toggle="modal" data-bs-target="#feedbackModal" data-report-id="<%= report.id %>">
+                                <i class="bi bi-chat-text me-2"></i>Give Feedback
+                              </a>
+                            </li>
+                          <% } %>
+                          <li>
+                            <a class="dropdown-item" href="/supervisor/student/<%= report.student_id %>">
+                              <i class="bi bi-person me-2"></i>View Student
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Export and Additional Actions -->
+          <div class="d-flex justify-content-between align-items-center mt-3">
+            <div class="text-muted small">
+              Last updated: <%= new Date().toLocaleString() %>
+            </div>
+            <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i>Print
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="exportBtn">
+                <i class="bi bi-download me-1"></i>Export
+              </button>
+            </div>
+          </div>
+        <% } else { %>
+          <div class="text-center py-5">
+            <i class="bi bi-file-earmark-x display-1 text-muted opacity-25 mb-3"></i>
+            <h5 class="text-muted">No Reports Found</h5>
+            <p class="text-muted mb-4">
+              <% if (filters && (filters.status !== 'all' || filters.stage !== 'all' || filters.search)) { %>
+                No reports match your current filters. Try adjusting your search criteria.
+              <% } else { %>
+                No reports have been submitted by your students yet.
+              <% } %>
+            </p>
+            <% if (filters && (filters.status !== 'all' || filters.stage !== 'all' || filters.search)) { %>
+              <a href="/supervisor/reports" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise me-1"></i>Clear Filters
+              </a>
+            <% } else { %>
+              <a href="/supervisor/dashboard" class="btn btn-primary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+              </a>
+            <% } %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Feedback Modal -->
+  <div class="modal fade" id="feedbackModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Provide Feedback</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="feedbackForm" action="/supervisor/feedback" method="POST">
+          <div class="modal-body">
+            <input type="hidden" name="report_id" id="feedbackReportId">
+            <div class="mb-3">
+              <label class="form-label">Comments</label>
+              <textarea class="form-control" name="comment" rows="5" placeholder="Provide detailed feedback for the student..." required></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Action Required</label>
+              <select class="form-select" name="action_taken">
+                <option value="revise">Revise and Resubmit</option>
+                <option value="minor_changes">Minor Changes Needed</option>
+                <option value="meet_discuss">Schedule Meeting to Discuss</option>
+                <option value="no_action">No Action Required</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Submit Feedback</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <style>
+  .report-row {
+    transition: background-color 0.2s ease;
+  }
+  
+  .report-row:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+  }
+  
+  .badge {
+    font-weight: 500;
+  }
+  
+  .dropdown-menu {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border: none;
+  }
+  </style>
+  
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Feedback modal
+    const feedbackModal = document.getElementById('feedbackModal');
+    if (feedbackModal) {
+      feedbackModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const reportId = button.getAttribute('data-report-id');
+        document.getElementById('feedbackReportId').value = reportId;
+      });
+    }
+  
+    // Auto-submit filters on change
+    const statusFilter = document.getElementById('statusFilter');
+    const stageFilter = document.getElementById('stageFilter');
+    
+    [statusFilter, stageFilter].forEach(filter => {
+      filter?.addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+      });
+    });
+  
+    // Export functionality
+    document.getElementById('exportBtn')?.addEventListener('click', function() {
+      // Simple CSV export implementation
+      const rows = document.querySelectorAll('#reportsTable tbody tr');
+      let csv = 'Report Title,Student Name,Registration,Stage,Status,Submitted Date\n';
+      
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const title = cells[0].querySelector('h6').textContent.trim();
+        const student = cells[1].querySelector('.fw-semibold').textContent.trim();
+        const registration = cells[1].querySelector('.text-muted').textContent.trim();
+        const stage = cells[2].textContent.trim();
+        const status = cells[3].textContent.trim();
+        const date = cells[4].querySelector('.fw-semibold').textContent.trim();
+        
+        csv += `"${title}","${student}","${registration}","${stage}","${status}","${date}"\n`;
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reports-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    });
+  
+    // Auto-refresh every 5 minutes
+    setInterval(() => {
+      console.log('Refreshing reports data...');
+      window.location.reload();
+    }, 300000);
+  });
+  
+  function approveReport(reportId) {
+    if (confirm('Are you sure you want to approve this report?')) {
+      fetch(`/supervisor/reports/${reportId}/move-next-stage`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while approving the report');
+      });
+    }
+  }
+  </script>

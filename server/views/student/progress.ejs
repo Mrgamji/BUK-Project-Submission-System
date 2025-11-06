@@ -1,0 +1,423 @@
+<div class="row mb-4">
+    <div class="col-12">
+      <h1 class="page-title"><i class="bi bi-graph-up me-2"></i>My Progress</h1>
+      <p class="page-subtitle">Track your project completion and submission timeline</p>
+    </div>
+  </div>
+  
+  <!-- Progress Overview Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3 mb-3">
+      <div class="card stat-card text-center">
+        <div class="card-body">
+          <div class="stat-icon text-primary mb-2">
+            <i class="bi bi-file-earmark-text display-6"></i>
+          </div>
+          <h3 class="stat-value"><%= totalReports %></h3>
+          <p class="stat-label">Total Reports</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+      <div class="card stat-card text-center">
+        <div class="card-body">
+          <div class="stat-icon text-success mb-2">
+            <i class="bi bi-check-circle display-6"></i>
+          </div>
+          <h3 class="stat-value"><%= approvedReports %></h3>
+          <p class="stat-label">Approved</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+      <div class="card stat-card text-center">
+        <div class="card-body">
+          <div class="stat-icon text-warning mb-2">
+            <i class="bi bi-clock display-6"></i>
+          </div>
+          <h3 class="stat-value"><%= pendingReports %></h3>
+          <p class="stat-label">Pending</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+      <div class="card stat-card text-center">
+        <div class="card-body">
+          <div class="stat-icon text-info mb-2">
+            <i class="bi bi-chat-left-text display-6"></i>
+          </div>
+          <h3 class="stat-value"><%= feedbackReports %></h3>
+          <p class="stat-label">With Feedback</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Progress Timeline -->
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-bar-chart-steps me-2 text-primary"></i>Project Progress Timeline
+          </h5>
+          <span class="badge bg-light text-dark">Completion: <%= completionPercentage %>%</span>
+        </div>
+        <div class="card-body">
+          <div class="progress-timeline">
+            <% progressStages.forEach((stage, index) => { %>
+              <div class="timeline-item <%= stage.completed ? 'completed' : '' %>">
+                <div class="timeline-marker">
+                  <div class="marker-icon bg-<%= stage.color %>">
+                    <i class="bi <%= stage.icon %>"></i>
+                  </div>
+                  <% if (index < progressStages.length - 1) { %>
+                    <div class="timeline-connector"></div>
+                  <% } %>
+                </div>
+                
+                <div class="timeline-content">
+                  <div class="card stage-card">
+                    <div class="card-body">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                          <h6 class="mb-1"><%= stage.name %></h6>
+                          <p class="text-muted small mb-2"><%= stage.description %></p>
+                        </div>
+                        <div class="text-end">
+                          <% if (stage.hasReport) { %>
+                            <span class="badge bg-<%= stage.statusColor %> mb-2">
+                              <%= stage.statusText %>
+                            </span>
+                            <br>
+                            <small class="text-muted">v<%= stage.version %></small>
+                          <% } else { %>
+                            <span class="badge bg-light text-muted">Not Started</span>
+                          <% } %>
+                        </div>
+                      </div>
+                      
+                      <div class="stage-details">
+                        <% if (stage.hasReport) { %>
+                          <div class="row g-2 mb-3">
+                            <div class="col-sm-6">
+                              <small class="text-muted">
+                                <i class="bi bi-calendar me-1"></i>
+                                Submitted: <%= stage.submittedDate %>
+                              </small>
+                            </div>
+                            <div class="col-sm-6">
+                              <small class="text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                <%= stage.daysAgo %>
+                              </small>
+                            </div>
+                          </div>
+                          
+                          <div class="d-flex gap-2">
+                            <a href="/student/report/<%= stage.reportId %>" class="btn btn-sm btn-outline-primary">
+                              <i class="bi bi-eye me-1"></i>View Details
+                            </a>
+                            <% if (stage.canReupload) { %>
+                              <% if (supervisor) { %>
+                                <a href="/student/reupload/<%= stage.reportId %>" class="btn btn-sm btn-outline-warning">
+                                  <i class="bi bi-arrow-repeat me-1"></i>Reupload
+                                </a>
+                              <% } else { %>
+                                <button class="btn btn-sm btn-outline-warning" disabled data-bs-toggle="tooltip" title="Supervisor required for reupload">
+                                  <i class="bi bi-arrow-repeat me-1"></i>Reupload
+                                </button>
+                              <% } %>
+                            <% } %>
+                          </div>
+                        <% } else { %>
+                          <div class="text-center py-3">
+                            <i class="bi bi-file-earmark-plus display-4 text-muted mb-2"></i>
+                            <p class="text-muted mb-3">No report submitted for this stage</p>
+                            <% if (supervisor) { %>
+                              <a href="/student/upload-report" class="btn btn-primary btn-sm">
+                                <i class="bi bi-cloud-upload me-1"></i>Upload Report
+                              </a>
+                            <% } else { %>
+                              <button class="btn btn-primary btn-sm" disabled data-bs-toggle="tooltip" title="Supervisor required for upload">
+                                <i class="bi bi-cloud-upload me-1"></i>Upload Report
+                              </button>
+                            <% } %>
+                          </div>
+                        <% } %>
+                      </div>
+                      
+                      <!-- Submission History -->
+                      <% if (stage.hasHistory) { %>
+                        <div class="submission-history mt-3">
+                          <button class="btn btn-sm btn-outline-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#history-<%= stage.key %>">
+                            <i class="bi bi-clock-history me-1"></i>
+                            View Submission History (<%= stage.historyCount %> previous)
+                          </button>
+                          <div class="collapse mt-2" id="history-<%= stage.key %>">
+                            <div class="list-group list-group-flush">
+                              <% stage.history.forEach((report, idx) => { %>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                  <div>
+                                    <small>v<%= report.version %></small>
+                                    <br>
+                                    <small class="text-muted">
+                                      <%= report.submittedDate %>
+                                    </small>
+                                  </div>
+                                  <span class="badge bg-<%= report.statusColor %>">
+                                    <%= report.statusText %>
+                                  </span>
+                                </div>
+                              <% }); %>
+                            </div>
+                          </div>
+                        </div>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <!-- Progress Summary -->
+      <div class="card mb-4">
+        <div class="card-header bg-white">
+          <h6 class="mb-0">
+            <i class="bi bi-pie-chart me-2 text-primary"></i>Progress Summary
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="progress-summary">
+            <div class="completion-chart text-center mb-4">
+              <div class="completion-circle mx-auto mb-3" data-percentage="<%= completionPercentage %>">
+                <span class="completion-text"><%= completionPercentage %>%</span>
+              </div>
+              <h6>Overall Completion</h6>
+              <p class="text-muted small">
+                <%= completedStages %> of <%= totalStages %> stages completed
+              </p>
+            </div>
+            
+            <div class="stage-progress">
+              <% progressStages.forEach(stage => { %>
+                <div class="stage-progress-item mb-3">
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="small"><%= stage.name %></span>
+                    <span class="small">
+                      <% if (stage.hasReport) { %>
+                        <i class="bi bi-check-circle text-success"></i>
+                      <% } else { %>
+                        <i class="bi bi-dash-circle text-muted"></i>
+                      <% } %>
+                    </span>
+                  </div>
+                  <div class="progress" style="height: 4px;">
+                    <div 
+                      class="progress-bar bg-<%= stage.color %>" 
+                      style="width: <%= stage.hasReport ? '100' : '0' %>%">
+                    </div>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Quick Actions -->
+      <div class="card mb-4">
+        <div class="card-header bg-white">
+          <h6 class="mb-0">
+            <i class="bi bi-lightning me-2 text-primary"></i>Quick Actions
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <% if (supervisor) { %>
+              <a href="/student/upload-report" class="btn btn-primary">
+                <i class="bi bi-cloud-upload me-2"></i>Upload New Report
+              </a>
+            <% } else { %>
+              <button class="btn btn-primary" disabled data-bs-toggle="tooltip" title="Supervisor required for upload">
+                <i class="bi bi-cloud-upload me-2"></i>Upload New Report
+              </button>
+            <% } %>
+            <a href="/student/dashboard" class="btn btn-outline-primary">
+              <i class="bi bi-speedometer2 me-2"></i>View Dashboard
+            </a>
+            <a href="/student/supervisor" class="btn btn-outline-info">
+              <i class="bi bi-person-workspace me-2"></i>My Supervisor
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Status Legend -->
+      <div class="card">
+        <div class="card-header bg-white">
+          <h6 class="mb-0">
+            <i class="bi bi-info-circle me-2 text-primary"></i>Status Guide
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="status-legend">
+            <div class="legend-item mb-2">
+              <span class="badge bg-success me-2"></span>
+              <small>Approved - Report accepted</small>
+            </div>
+            <div class="legend-item mb-2">
+              <span class="badge bg-warning me-2"></span>
+              <small>Pending - Awaiting review</small>
+            </div>
+            <div class="legend-item mb-2">
+              <span class="badge bg-info me-2"></span>
+              <small>Feedback Given - Review comments</small>
+            </div>
+            <div class="legend-item mb-2">
+              <span class="badge bg-danger me-2"></span>
+              <small>Rejected - Major revisions needed</small>
+            </div>
+            <div class="legend-item">
+              <span class="badge bg-light me-2"></span>
+              <small>Not Started - No submission</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <style>
+    .stat-card {
+      transition: transform 0.2s;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+    
+    .stat-icon {
+      opacity: 0.8;
+    }
+    
+    .stat-value {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+      color: #6c757d;
+      font-weight: 500;
+    }
+    
+    .progress-timeline {
+      position: relative;
+      padding-left: 3rem;
+    }
+    
+    .timeline-item {
+      position: relative;
+      margin-bottom: 2rem;
+    }
+    
+    .timeline-marker {
+      position: absolute;
+      left: -3rem;
+      top: 0;
+      text-align: center;
+    }
+    
+    .marker-icon {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2rem;
+    }
+    
+    .timeline-connector {
+      width: 2px;
+      height: calc(100% + 2rem);
+      background: #dee2e6;
+      margin: 0.5rem auto;
+    }
+    
+    .timeline-item.completed .marker-icon {
+      background: var(--buk-success) !important;
+    }
+    
+    .stage-card {
+      border-left: 4px solid;
+      border-left-color: inherit;
+    }
+    
+    .completion-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: conic-gradient(var(--buk-success) 0% var(--percentage), #e9ecef var(--percentage) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    .completion-circle::before {
+      content: '';
+      position: absolute;
+      width: 90px;
+      height: 90px;
+      background: white;
+      border-radius: 50%;
+    }
+    
+    .completion-text {
+      position: relative;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--buk-success);
+    }
+    
+    .submission-history .list-group-item {
+      border: none;
+      padding: 0.5rem 0.75rem;
+    }
+    
+    .status-legend .badge {
+      width: 12px;
+      height: 12px;
+      padding: 0;
+      border-radius: 2px;
+    }
+  </style>
+  
+  <script>
+    // Initialize completion circles
+    document.addEventListener('DOMContentLoaded', function() {
+      const circles = document.querySelectorAll('.completion-circle');
+      circles.forEach(circle => {
+        const percentage = circle.getAttribute('data-percentage');
+        circle.style.setProperty('--percentage', `${percentage}%`);
+      });
+      
+      // Initialize tooltips
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    });
+  </script>

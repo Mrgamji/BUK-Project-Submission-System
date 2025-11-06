@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
 
-// Ensure /data directory exists - FIXED THE TYPO
+// Ensure /data directory exists
 const dbDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
@@ -23,7 +23,6 @@ db.prepare(`
     department TEXT,
     level TEXT,
     registration_number TEXT,
-    is_active INTEGER DEFAULT 1,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
   )
@@ -46,7 +45,6 @@ db.prepare(`
     student_id INTEGER NOT NULL,
     supervisor_id INTEGER NOT NULL,
     level_coordinator_id INTEGER NOT NULL,
-    is_active INTEGER DEFAULT 1,
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (student_id) REFERENCES users(id),
     FOREIGN KEY (supervisor_id) REFERENCES users(id),

@@ -39,7 +39,11 @@ router.use(requireRole('student'));
 
 // Routes
 router.get('/dashboard', studentController.getDashboard);
+router.get('/supervisor', studentController.getSupervisor);
+router.get('/profile', studentController.getProfile);
 router.get('/upload-report', studentController.getUploadReport);
+router.get('/progress', studentController.getProgress);
+router.get('/settings', studentController.getSettings);
 router.post('/upload-report', upload.single('report'), studentController.postUploadReport);
 
 router.get('/report/:id', studentController.getReportDetails);

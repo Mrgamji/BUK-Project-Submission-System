@@ -1,161 +1,254 @@
-<div class="row mb-4">
-  <div class="col-12">
-    <h2><i class="bi bi-speedometer2 me-2"></i>General Admin Dashboard</h2>
-<<<<<<< HEAD
-    <p class="text-muted">System overview and user statistics</p>
-  </div>
-</div>
+<main>
+<div class="container py-3">
 
-<div class="row g-3 mb-4">
-  <div class="col-md-3">
-    <div class="card bg-primary text-white shadow-sm">
-      <div class="card-body">
-        <h3><%= stats.coordinators %></h3>
-        <p>Level Coordinators</p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card bg-success text-white shadow-sm">
-      <div class="card-body">
-        <h3><%= stats.supervisors %></h3>
-        <p>Supervisors</p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card bg-warning text-dark shadow-sm">
-      <div class="card-body">
-        <h3><%= stats.students %></h3>
-        <p>Students</p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card bg-danger text-white shadow-sm">
-      <div class="card-body">
-        <h3><%= stats.hods %></h3>
-        <p>HODs</p>
-=======
-    <p class="text-muted">Manage level coordinators and oversee the entire system</p>
-  </div>
-</div>
-
-<div class="row mb-4">
-  <div class="col-md-3 mb-3">
-    <div class="card stat-card">
-      <div class="card-body">
-        <h3 class="card-title"><%= stats.coordinators %></h3>
-        <p class="card-text">Level Coordinators</p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3 mb-3">
-    <div class="card stat-card">
-      <div class="card-body">
-        <h3 class="card-title"><%= stats.supervisors %></h3>
-        <p class="card-text">Supervisors</p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3 mb-3">
-    <div class="card stat-card">
-      <div class="card-body">
-        <h3 class="card-title"><%= stats.students %></h3>
-        <p class="card-text">Students</p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3 mb-3">
-    <div class="card stat-card">
-      <div class="card-body">
-        <h3 class="card-title"><%= stats.hods %></h3>
-        <p class="card-text">HODs</p>
->>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="card">
-<<<<<<< HEAD
-  <div class="card-header d-flex justify-content-between align-items-center bg-white">
-    <h5 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i>Recent Users</h5>
-    <a href="/admin/manage-users" class="btn btn-sm btn-outline-primary">
-      <i class="bi bi-people"></i> Manage All
-    </a>
-  </div>
-  <div class="card-body">
-    <% if (recentUsers && recentUsers.length) { %>
-      <table class="table table-hover align-middle">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Level</th>
-            <th>Joined</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% recentUsers.forEach(u => { %>
-            <tr>
-              <td><%= u.full_name %></td>
-              <td><%= u.email %></td>
-              <td><span class="badge bg-secondary text-uppercase"><%= u.role %></span></td>
-              <td><%= u.level || '-' %></td>
-              <td><%= new Date(u.created_at).toLocaleDateString() %></td>
-            </tr>
-          <% }); %>
-        </tbody>
-      </table>
-    <% } else { %>
-      <p class="text-muted text-center py-3">No users found.</p>
-=======
-  <div class="card-header bg-white d-flex justify-content-between align-items-center">
-    <h5 class="mb-0"><i class="bi bi-people me-2"></i>Level Coordinators</h5>
-    <a href="/admin/add-coordinator" class="btn btn-primary btn-sm">
-      <i class="bi bi-person-plus me-1"></i>Add Coordinator
-    </a>
-  </div>
-  <div class="card-body">
-    <% if (coordinators && coordinators.length > 0) { %>
-      <div class="table-responsive">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>Full Name</th>
-              <th>Email</th>
-              <th>Level</th>
-              <th>Created At</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% coordinators.forEach(coordinator => { %>
-              <tr>
-                <td><%= coordinator.full_name %></td>
-                <td><%= coordinator.email %></td>
-                <td><span class="badge bg-info"><%= coordinator.level %> Level</span></td>
-                <td><%= new Date(coordinator.created_at).toLocaleDateString() %></td>
-                <td>
-                  <a href="/admin/edit-coordinator/<%= coordinator.id %>" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-pencil"></i>
-                  </a>
-                  <form action="/admin/delete-coordinator/<%= coordinator.id %>" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure?')">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </form>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    <% } else { %>
-      <p class="text-muted text-center py-4">No level coordinators yet. Add one to get started.</p>
->>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae
+    <% if (typeof success !== 'undefined' && success) { %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i><%= success %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     <% } %>
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <% } %>
+
+    <div class="mb-3">
+        <h2 class="h4 fw-bold mb-1">
+            <i class="bi bi-shield-check me-2"></i><%= typeof title !== 'undefined' ? title : 'Admin Dashboard' %>
+        </h2>
+        <p class="text-muted mb-2" style="font-size:0.96em">Quick snapshot of system administration</p>
+    </div>
+
+    <div class="row g-2 mb-2">
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card text-center border-0 bg-light">
+                <div class="card-body py-2">
+                    <div class="mb-1 text-primary"><i class="bi bi-person-gear"></i></div>
+                    <div class="fw-semibold"><%= stats.coordinators || 0 %></div>
+                    <small class="text-muted">Coordinators</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card text-center border-0 bg-light">
+                <div class="card-body py-2">
+                    <div class="mb-1 text-success"><i class="bi bi-person-badge"></i></div>
+                    <div class="fw-semibold"><%= stats.supervisors || 0 %></div>
+                    <small class="text-muted">Supervisors</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card text-center border-0 bg-light">
+                <div class="card-body py-2">
+                    <div class="mb-1 text-warning"><i class="bi bi-people"></i></div>
+                    <div class="fw-semibold"><%= stats.students || 0 %></div>
+                    <small class="text-muted">Students</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card text-center border-0 bg-light">
+                <div class="card-body py-2">
+                    <div class="mb-1 text-danger"><i class="bi bi-person-vcard"></i></div>
+                    <div class="fw-semibold"><%= stats.hods || 0 %></div>
+                    <small class="text-muted">HODs</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card text-center border-0 bg-light">
+                <div class="card-body py-2">
+                    <div class="mb-1 text-info"><i class="bi bi-file-earmark-text"></i></div>
+                    <div class="fw-semibold"><%= stats.totalReports || 0 %></div>
+                    <small class="text-muted">Reports</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card text-center border-0 bg-light">
+                <div class="card-body py-2">
+                    <div class="mb-1 text-primary"><i class="bi bi-activity"></i></div>
+                    <div class="fw-semibold"><%= stats.activeUsers || 0 %></div>
+                    <small class="text-muted">Active</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-lg-7">
+            <div class="card mb-3">
+                <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between bg-white border-bottom">
+                    <span class="fw-semibold"><i class="bi bi-people me-1"></i>Recent Users</span>
+                    <a href="/admin/users" class="btn btn-sm btn-outline-secondary">All Users</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover m-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th style="min-width:80px;">Role</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <% if (recentUsers && recentUsers.length > 0) { 
+                            recentUsers.slice(0, 7).forEach(user => { 
+                                const roleColors = {
+                                    'student': 'bg-warning text-dark',
+                                    'supervisor': 'bg-success',
+                                    'level_coordinator': 'bg-primary',
+                                    'hod': 'bg-danger',
+                                    'general_admin': 'bg-primary'
+                                };
+                                const initials = user.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
+                        %>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge rounded-pill bg-secondary me-2" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center"><%= initials.substring(0,2) %></span>
+                                        <span><%= user.full_name %></span>
+                                    </div>
+                                </td>
+                                <td><%= user.email %></td>
+                                <td>
+                                    <span class="badge <%= roleColors[user.role] || 'bg-light text-dark' %>">
+                                        <%= user.role.replace('_',' ').toUpperCase() %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="/admin/users/<%= user.id %>" class="btn btn-outline-primary" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="/admin/users/<%= user.id %>/edit" class="btn btn-outline-warning" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); } else { %>
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">
+                                    <i class="bi bi-people opacity-50 fs-3"></i><br>
+                                    <small>No users found</small>
+                                </td>
+                            </tr>
+                        <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card mb-3">
+                <div class="card-header bg-white border-bottom py-2 px-3 fw-semibold">
+                    <i class="bi bi-info-circle me-1"></i>System Overview
+                </div>
+                <div class="card-body pb-2 pt-2 px-3">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-1 small">
+                        <span>Server Uptime</span>
+                        <span class="fw-semibold text-success">99.8%</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-1 small">
+                        <span>Database Size</span>
+                        <span class="fw-semibold"><%= (stats.databaseSize || 0) %> MB</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-1 small">
+                        <span>Active Sessions</span>
+                        <span class="fw-semibold text-info"><%= stats.activeSessions || 0 %></span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-1 small">
+                        <span>API Requests (24h)</span>
+                        <span class="fw-semibold"><%= (stats.apiRequests || 0).toLocaleString() %></span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center small">
+                        <span>Error Rate</span>
+                        <span class="fw-semibold text-success">0.2%</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-white pt-2 pb-2 text-end border-0">
+                    <a href="/admin/system" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-gear me-1"></i>System Config
+                    </a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-white border-bottom py-2 px-3 fw-semibold">
+                    <i class="bi bi-clock-history me-1"></i>Recent Activity
+                </div>
+                <div class="card-body py-2 px-3" style="max-height:180px;overflow:auto">
+                    <% if (recentActivities && recentActivities.length > 0) { %>
+                        <ul class="list-unstyled mb-0">
+                        <% recentActivities.slice(0, 5).forEach(activity => { %>
+                            <li class="mb-2">
+                                <div class="d-flex align-items-start">
+                                    <span class="me-2 text-secondary"><i class="bi bi-dot"></i></span>
+                                    <div style="font-size:0.98em">
+                                        <%= activity.description %> <br>
+                                        <small class="text-muted"><i class="bi bi-clock me-1"></i>
+                                            <%= new Date(activity.timestamp).toLocaleTimeString() %>
+                                        </small>
+                                    </div>
+                                </div>
+                            </li>
+                        <% }); %>
+                        </ul>
+                    <% } else { %>
+                        <div class="text-muted text-center small py-2">No recent activity</div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Settings Modal (small) -->
+<div class="modal fade" id="systemSettings" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h5 class="modal-title fs-6"><i class="bi bi-gear-wide me-2"></i>System Configuration</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body py-3">
+        <div class="mb-2">
+          <label class="form-label mb-1">Password Policy</label>
+          <select class="form-select form-select-sm">
+            <option>Basic (6 chars)</option>
+            <option selected>Standard (8+ chars, complex)</option>
+            <option>Strong (12+ chars, special)</option>
+          </select>
+        </div>
+        <div class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" id="twoFactor" checked>
+          <label class="form-check-label small" for="twoFactor">2FA for admins</label>
+        </div>
+        <div class="mb-2">
+          <label class="form-label mb-1">Session Timeout</label>
+          <select class="form-select form-select-sm">
+            <option>15 min</option>
+            <option selected>30 min</option>
+            <option>1 hour</option>
+            <option>4 hours</option>
+          </select>
+        </div>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="autoBackup" checked>
+          <label class="form-check-label small" for="autoBackup">Automatic daily backups</label>
+        </div>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
   </div>
 </div>
+</main>

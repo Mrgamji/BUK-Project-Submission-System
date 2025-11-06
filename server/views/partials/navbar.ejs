@@ -1,19 +1,231 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-dark">
   <div class="container-fluid">
-    <span class="navbar-brand mb-0 h1">
-      <i class="bi bi-file-earmark-text me-2"></i>
-      Project Submission System
-    </span>
-    <div class="ms-auto d-flex align-items-center">
-      <span class="me-3">
-        <i class="bi bi-person-circle me-2"></i>
-        <strong><%= user.full_name %></strong>
-        <span class="badge bg-secondary ms-2"><%= user.role.replace('_', ' ').toUpperCase() %></span>
-      </span>
-      <a href="/auth/logout" class="btn btn-outline-danger btn-sm">
-        <i class="bi bi-box-arrow-right me-1"></i>
-        Logout
-      </a>
+    <!-- Brand Logo & Name -->
+    <a class="navbar-brand" href="
+      <% if (user.role === 'student') { %>
+        /student/dashboard
+      <% } else if (user.role === 'supervisor') { %>
+        /supervisor/dashboard
+      <% } else if (user.role === 'level_coordinator') { %>
+        /coordinator/dashboard
+      <% } else if (user.role === 'hod') { %>
+        /hod/dashboard
+      <% } else if (user.role === 'general_admin') { %>
+        /admin/dashboard
+      <% } else { %>
+        /dashboard
+      <% } %>
+    ">
+      <!-- BUK Logo -->
+      <img src="/images/buklogo.png" alt="BUK Logo" style="width: 40px; height: 40px; object-fit: contain; border-radius: 50%; margin-right: 10px;">
+      <span>Project Submission System</span>
+    </a>
+
+    <!-- Mobile Toggle Button -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Navbar Content -->
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <!-- Navigation Links -->
+      <ul class="navbar-nav me-auto">
+        <% if (user.role === 'student') { %>
+          <li class="nav-item">
+            <a class="nav-link" href="/student/dashboard">
+              <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/student/upload-report">
+              <i class="bi bi-cloud-upload me-1"></i>Upload Report
+            </a>
+          </li>
+        <% } else if (user.role === 'supervisor') { %>
+          <li class="nav-item">
+            <a class="nav-link" href="/supervisor/dashboard">
+              <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/supervisor/reports">
+              <i class="bi bi-file-earmark-text me-1"></i>Reports
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/supervisor/students">
+              <i class="bi bi-people me-1"></i>Students
+            </a>
+          </li>
+        <% } else if (user.role === 'level_coordinator') { %>
+          <li class="nav-item">
+            <a class="nav-link" href="/coordinator/dashboard">
+              <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/coordinator/assignments">
+              <i class="bi bi-link me-1"></i>Assignments
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/coordinator/progress">
+              <i class="bi bi-graph-up me-1"></i>Progress
+            </a>
+          </li>
+        <% } else if (user.role === 'hod') { %>
+          <li class="nav-item">
+            <a class="nav-link" href="/hod/dashboard">
+              <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/hod/reports">
+              <i class="bi bi-file-earmark-text me-1"></i>Reports
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/hod/analytics">
+              <i class="bi bi-bar-chart me-1"></i>Analytics
+            </a>
+          </li>
+        <% } else if (user.role === 'general_admin') { %>
+          <li class="nav-item">
+            <a class="nav-link" href="/admin/dashboard">
+              <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/admin/manage-users">
+              <i class="bi bi-people me-1"></i>Users
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/admin/system-logs">
+              <i class="bi bi-clock-history me-1"></i>Logs
+            </a>
+          </li>
+        <% } %>
+      </ul>
+
+      <!-- User Info & Actions -->
+      <div class="d-flex align-items-center">
+        <!-- Notifications -->
+        <div class="dropdown me-3">
+          <a class="btn btn-outline-light btn-sm position-relative" href="#" role="button" data-bs-toggle="dropdown">
+            <i class="bi bi-bell"></i>
+            <% 
+              // Safe notification count
+              const notificationCount = 0;
+            %>
+            <% if (notificationCount > 0) { %>
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                <%= notificationCount %>
+                <span class="visually-hidden">unread notifications</span>
+              </span>
+            <% } %>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><h6 class="dropdown-header">Notifications</h6></li>
+            <li><a class="dropdown-item" href="#">
+              <i class="bi bi-file-earmark-text text-primary me-2"></i>
+              <div>
+                <small>New feedback on your report</small>
+                <div class="text-muted" style="font-size: 0.75rem;">2 hours ago</div>
+              </div>
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-center" href="/notifications">View All</a></li>
+          </ul>
+        </div>
+
+        <!-- User Profile -->
+        <div class="dropdown">
+          <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            <div class="me-2">
+              <i class="bi bi-person-circle fs-5"></i>
+            </div>
+            <div class="d-none d-md-block text-start">
+              <div class="fw-semibold" style="font-size: 0.9rem;"><%= user.full_name %></div>
+              <div class="user-role badge">
+                <%= user.role.replace('_', ' ').toUpperCase() %>
+              </div>
+            </div>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end shadow">
+            <li>
+              <a class="dropdown-item" href="/profile">
+                <i class="bi bi-person me-2"></i>My Profile
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/settings">
+                <i class="bi bi-gear me-2"></i>Settings
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item text-danger" href="/auth/logout">
+                <i class="bi bi-box-arrow-right me-2"></i>Logout
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 </nav>
+
+<!-- Quick Stats Bar (Optional - can be removed if not needed) -->
+<div class="bg-light border-bottom py-2">
+  <div class="container-fluid">
+    <div class="row">
+      <% if (user.role === 'student') { %>
+        <div class="col-auto">
+          <small class="text-muted">
+            <i class="bi bi-file-earmark-text me-1"></i>
+            Reports: <strong><%= Array.isArray(reports) ? reports.length : 0 %></strong>
+          </small>
+        </div>
+        <div class="col-auto">
+          <small class="text-muted">
+            <i class="bi bi-check-circle me-1"></i>
+            Approved: <strong><%= Array.isArray(reports) ? reports.filter(r => r.status === 'approved').length : 0 %></strong>
+          </small>
+        </div>
+        <div class="col-auto">
+          <small class="text-muted">
+            <i class="bi bi-clock me-1"></i>
+            Pending: <strong><%= Array.isArray(reports) ? reports.filter(r => r.status === 'pending').length : 0 %></strong>
+          </small>
+        </div>
+      <% } else if (user.role === 'supervisor') { %>
+        <div class="col-auto">
+          <small class="text-muted">
+            <i class="bi bi-people me-1"></i>
+            Students: <strong>0</strong>
+          </small>
+        </div>
+        <div class="col-auto">
+          <small class="text-muted">
+            <i class="bi bi-file-earmark-text me-1"></i>
+            Reports to Review: <strong>0</strong>
+          </small>
+        </div>
+      <% } else if (user.role === 'level_coordinator') { %>
+        <div class="col-auto">
+          <small class="text-muted">
+            <i class="bi bi-people me-1"></i>
+            Total Students: <strong>0</strong>
+          </small>
+        </div>
+        <div class="col-auto">
+          <small class="text-muted">
+            <i class="bi bi-person-workspace me-1"></i>
+            Supervisors: <strong>0</strong>
+          </small>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>

@@ -10,6 +10,8 @@ module.exports = function renderPage(res, options = {}) {
     logs = [],
     message = null,
     error = null,
+    supervisor = null,   // ✅ FIX ADDED
+    reports = [],        // ✅ If needed
     ...extra
   } = options;
 
@@ -23,6 +25,8 @@ module.exports = function renderPage(res, options = {}) {
     logs,
     message,
     error,
+    supervisor,  // ✅ PASS IT HERE
+    reports,     // ✅ PASS IT ALSO
     ...extra
   });
 };

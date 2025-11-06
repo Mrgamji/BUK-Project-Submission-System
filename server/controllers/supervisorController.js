@@ -1,752 +1,873 @@
-const fs = require('fs');
-const path = require('path');
-const express = require('express');
 const db = require('../config/database');
 const { logActivity } = require('../utils/logger');
-const sendEmail = require('../utils/email');
 
-// File Configuration
-const FILE_CONFIG = {
-  MAX_FILE_SIZE: 50 * 1024 * 1024, // 50MB
-  ALLOWED_EXTENSIONS: ['pdf', 'txt', 'doc', 'docx', 'js', 'html', 'css', 'md', 'json', 'xml', 'py', 'java', 'cpp', 'c', 'php', 'jpg', 'jpeg', 'png', 'gif', 'zip', 'rar'],
-  EDITABLE_EXTENSIONS: ['txt', 'js', 'html', 'css', 'md', 'json', 'xml', 'py', 'java', 'cpp', 'c', 'php'],
-  MIME_TYPES: {
-    pdf: 'application/pdf',
-    txt: 'text/plain',
-    doc: 'application/msword',
-    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    js: 'application/javascript',
-    html: 'text/html',
-    css: 'text/css',
-    md: 'text/markdown',
-    json: 'application/json',
-    xml: 'application/xml',
-    py: 'text/x-python',
-    java: 'text/x-java',
-    cpp: 'text/x-c++src',
-    c: 'text/x-csrc',
-    php: 'application/x-php',
-    jpg: 'image/jpeg',
-    jpeg: 'image/jpeg',
-    png: 'image/png',
-    gif: 'image/gif',
-    zip: 'application/zip',
-    rar: 'application/x-rar-compressed'
-  }
-};
-
-// Utility functions
-const FileUtils = {
-  getFileExtension(filename) {
-    return filename.toLowerCase().split('.').pop();
-  },
-
-  isValidFileType(extension) {
-    return FILE_CONFIG.ALLOWED_EXTENSIONS.includes(extension);
-  },
-
-  isEditableFile(extension) {
-    return FILE_CONFIG.EDITABLE_EXTENSIONS.includes(extension);
-  },
-
-  getMimeType(extension) {
-    return FILE_CONFIG.MIME_TYPES[extension] || 'application/octet-stream';
-  },
-
-  formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  },
-
-  sanitizeFileName(filename) {
-    return filename.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-  }
-};
-
-// GET Supervisor Dashboard
-const getDashboard = (req, res) => {
+// Get supervisor dashboard data
+const getDashboard = async (req, res) => {
   try {
+    // Use session user instead of req.user
     const supervisorId = req.session.user?.id;
-
+    
     if (!supervisorId) {
-      return res.status(401).render('error', {
-        message: 'Authentication required',
-        error: { status: 401 }
-      });
+      console.error('No user ID found in session');
+      return res.redirect('/auth/login');
     }
 
-    // Get assigned students
-    let assignments = [];
-    try {
-      assignments = db.prepare(`
-        SELECT 
-          s.id AS student_id, 
-          s.full_name AS student_name, 
-          s.email AS student_email,
-          s.department, 
-          s.level,
-          COALESCE(s.registration_number, 'N/A') as registration_number
-        FROM student_supervisor_assignments a
-        LEFT JOIN users s ON s.id = a.student_id
-        WHERE a.supervisor_id = ? AND a.is_active = 1
-        ORDER BY s.full_name
-      `).all(supervisorId);
-    } catch (dbError) {
-      console.error('Database Error (Assignments):', dbError);
-      return res.status(500).render('error', {
-        message: 'Failed to load student data',
-        error: process.env.NODE_ENV === 'development' ? dbError : {}
-      });
-    }
+    console.log('Loading dashboard for supervisor:', supervisorId);
 
-    const studentIds = assignments.map(a => a.student_id);
-    let reports = [];
-    let recentReports = [];
-
-    if (studentIds.length > 0) {
-      try {
-        const placeholders = studentIds.map(() => '?').join(',');
-        
-        reports = db.prepare(`
-          SELECT r.*, s.full_name AS student_name
-          FROM reports r
-          LEFT JOIN users s ON s.id = r.student_id
-          WHERE r.student_id IN (${placeholders})
-          ORDER BY r.submitted_at DESC
-        `).all(...studentIds);
-
-        recentReports = db.prepare(`
-          SELECT r.*, s.full_name AS student_name
-          FROM reports r
-          LEFT JOIN users s ON s.id = r.student_id
-          WHERE r.student_id IN (${placeholders})
-          ORDER BY r.submitted_at DESC
-          LIMIT 10
-        `).all(...studentIds);
-      } catch (reportsError) {
-        console.error('Database Error (Reports):', reportsError);
-        reports = [];
-        recentReports = [];
-      }
-    }
-
-    const students = assignments.map(assignment => {
-      const studentReports = reports.filter(r => r.student_id === assignment.student_id);
-      return {
-        id: assignment.student_id,
-        full_name: assignment.student_name || 'Unknown Student',
-        email: assignment.student_email || 'No email',
-        registration_number: assignment.registration_number || 'N/A',
-        department: assignment.department || 'No department',
-        level: assignment.level || 'No level',
-        reportsCount: studentReports.length,
-        pendingCount: studentReports.filter(r => r.status === 'pending').length,
-        approvedCount: studentReports.filter(r => r.status === 'approved').length,
-        lastSubmission: studentReports.length > 0 ? studentReports[0].submitted_at : null
-      };
-    });
-
-    const dashboardStats = {
-      totalStudents: students.length,
-      pendingReports: reports.filter(r => r.status === 'pending').length,
-      totalReports: reports.length,
-      approvedReports: reports.filter(r => r.status === 'approved').length
-    };
+    // Get all data sequentially to ensure proper variable assignment
+    const stats = await getSupervisorStats(supervisorId);
+    const students = await getAssignedStudents(supervisorId);
+    const recentReports = await getRecentReports(supervisorId, 5);
+    const reportsByStage = await getReportsByStage(supervisorId);
+    const recentActivity = await getRecentActivity(supervisorId, 8);
 
     console.log('Dashboard data loaded:', {
       students: students.length,
-      reports: reports.length,
-      recentReports: recentReports.length
+      reports: recentReports.length,
+      recentActivity: recentActivity.length
     });
 
+    // Get flash messages if any
+    const success = req.flash('success')[0] || null;
+    const error = req.flash('error')[0] || null;
+
+    // Render with all data
     res.render('layouts/main', {
       title: 'Supervisor Dashboard',
       view: '../supervisor/dashboard',
       user: req.session.user,
-      students,
-      recentReports,
-      stats: dashboardStats
+      stats: stats,
+      students: students,
+      recentReports: recentReports,
+      reportsByStage: reportsByStage,
+      recentActivity: recentActivity,
+      success: success,
+      error: error
     });
-
   } catch (error) {
-    console.error('Dashboard Controller Error:', error);
-    res.status(500).render('error', {
-      message: 'Failed to load dashboard',
-      error: process.env.NODE_ENV === 'development' ? error : {}
+    console.error('Dashboard error:', error);
+    res.status(500).render('error', { 
+      error: 'Failed to load dashboard',
+      user: req.session.user
     });
   }
 };
 
-// GET Student Reports
-const getStudentReports = (req, res) => {
+// Get all students assigned to supervisor
+const getAllStudents = async (req, res) => {
+  try {
+    const supervisorId = req.session.user?.id;
+    
+    if (!supervisorId) {
+      return res.redirect('/auth/login');
+    }
+
+    console.log('Loading students for supervisor:', supervisorId);
+    
+    const students = await getAssignedStudents(supervisorId);
+    const stats = await getSupervisorStats(supervisorId);
+    
+    console.log('Students data:', students);
+    console.log('Stats data:', stats);
+    
+    const success = req.flash('success')[0] || null;
+    const error = req.flash('error')[0] || null;
+
+    // Make sure we're passing all required variables
+    res.render('layouts/main', {
+      title: 'My Students',
+      view: '../supervisor/students',
+      user: req.session.user,
+      students: students || [],
+      stats: stats || {},
+      success: success,
+      error: error
+    });
+  } catch (error) {
+    console.error('Error getting all students:', error);
+    res.status(500).render('error', {
+      error: 'Failed to load students',
+      user: req.session.user
+    });
+  }
+};
+
+// Get all reports assigned to supervisor
+const getAllReports = async (req, res) => {
+  try {
+    const supervisorId = req.session.user?.id;
+    
+    if (!supervisorId) {
+      return res.redirect('/auth/login');
+    }
+
+    const { status, stage, search } = req.query;
+    let query = `
+      SELECT 
+        r.*,
+        u.full_name as student_name,
+        u.email as student_email,
+        u.registration_number,
+        u.level,
+        u.department,
+        (SELECT COUNT(*) FROM feedback f WHERE f.report_id = r.id) as feedback_count,
+        (SELECT COUNT(*) FROM hod_feedback hf WHERE hf.report_id = r.id) as hod_feedback_count
+      FROM reports r
+      INNER JOIN users u ON r.student_id = u.id
+      WHERE r.supervisor_id = ?
+    `;
+    
+    const params = [supervisorId];
+    
+    // Apply filters
+    if (status && status !== 'all') {
+      query += ' AND r.status = ?';
+      params.push(status);
+    }
+    
+    if (stage && stage !== 'all') {
+      query += ' AND r.report_stage = ?';
+      params.push(stage);
+    }
+    
+    if (search) {
+      query += ' AND (r.title LIKE ? OR u.full_name LIKE ? OR u.registration_number LIKE ?)';
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm, searchTerm);
+    }
+    
+    query += ' ORDER BY r.submitted_at DESC';
+    
+    const reports = db.prepare(query).all(...params);
+    const stats = await getSupervisorStats(supervisorId);
+    
+    const success = req.flash('success')[0] || null;
+    const error = req.flash('error')[0] || null;
+
+    res.render('layouts/main', {
+      title: 'All Reports',
+      view: '../supervisor/reports',
+      user: req.session.user,
+      reports: reports,
+      stats: stats,
+      filters: { status, stage, search },
+      success: success,
+      error: error
+    });
+  } catch (error) {
+    console.error('Error getting all reports:', error);
+    res.status(500).render('error', {
+      error: 'Failed to load reports',
+      user: req.session.user
+    });
+  }
+};
+
+// Get reports by supervisor (helper function)
+const getReportsBySupervisor = async (supervisorId) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const reports = db.prepare(`
+        SELECT 
+          r.*,
+          u.full_name as student_name,
+          u.email as student_email,
+          u.registration_number,
+          u.level,
+          u.department
+        FROM reports r
+        INNER JOIN users u ON r.student_id = u.id
+        WHERE r.supervisor_id = ?
+        ORDER BY r.submitted_at DESC
+      `).all(supervisorId);
+
+      resolve(reports);
+    } catch (error) {
+      console.error('Error getting reports by supervisor:', error);
+      resolve([]);
+    }
+  });
+};
+
+// Get supervisor statistics
+const getSupervisorStats = async (supervisorId) => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Total assigned students
+      const totalStudents = db.prepare(`
+        SELECT COUNT(DISTINCT student_id) as count 
+        FROM student_supervisor_assignments 
+        WHERE supervisor_id = ?
+      `).get(supervisorId);
+
+      // Total reports
+      const totalReports = db.prepare(`
+        SELECT COUNT(*) as count 
+        FROM reports 
+        WHERE supervisor_id = ?
+      `).get(supervisorId);
+
+      // Pending reports
+      const pendingReports = db.prepare(`
+        SELECT COUNT(*) as count 
+        FROM reports 
+        WHERE supervisor_id = ? AND status = 'pending'
+      `).get(supervisorId);
+
+      // Approved reports
+      const approvedReports = db.prepare(`
+        SELECT COUNT(*) as count 
+        FROM reports 
+        WHERE supervisor_id = ? AND status = 'approved'
+      `).get(supervisorId);
+
+      // Rejected reports
+      const rejectedReports = db.prepare(`
+        SELECT COUNT(*) as count 
+        FROM reports 
+        WHERE supervisor_id = ? AND status = 'rejected'
+      `).get(supervisorId);
+
+      // Feedback given count
+      const feedbackGiven = db.prepare(`
+        SELECT COUNT(DISTINCT report_id) as count 
+        FROM feedback 
+        WHERE supervisor_id = ?
+      `).get(supervisorId);
+
+      resolve({
+        totalStudents: totalStudents?.count || 0,
+        totalReports: totalReports?.count || 0,
+        pendingReports: pendingReports?.count || 0,
+        approvedReports: approvedReports?.count || 0,
+        rejectedReports: rejectedReports?.count || 0,
+        feedbackGiven: feedbackGiven?.count || 0
+      });
+    } catch (error) {
+      console.error('Error getting supervisor stats:', error);
+      resolve({
+        totalStudents: 0,
+        totalReports: 0,
+        pendingReports: 0,
+        approvedReports: 0,
+        rejectedReports: 0,
+        feedbackGiven: 0
+      });
+    }
+  });
+};
+
+// Get assigned students with report counts
+const getAssignedStudents = async (supervisorId) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const students = db.prepare(`
+        SELECT 
+          u.id,
+          u.full_name,
+          u.email,
+          u.registration_number,
+          u.level,
+          u.department,
+          COUNT(r.id) as reportsCount,
+          SUM(CASE WHEN r.status = 'pending' THEN 1 ELSE 0 END) as pendingCount,
+          SUM(CASE WHEN r.status = 'approved' THEN 1 ELSE 0 END) as approvedCount
+        FROM users u
+        INNER JOIN student_supervisor_assignments ssa ON u.id = ssa.student_id
+        LEFT JOIN reports r ON u.id = r.student_id
+        WHERE ssa.supervisor_id = ?
+        GROUP BY u.id
+        ORDER BY u.full_name
+      `).all(supervisorId);
+
+      const formattedStudents = students.map(student => ({
+        ...student,
+        reportsCount: student.reportsCount || 0,
+        pendingCount: student.pendingCount || 0,
+        approvedCount: student.approvedCount || 0
+      }));
+
+      resolve(formattedStudents);
+    } catch (error) {
+      console.error('Error getting assigned students:', error);
+      resolve([]);
+    }
+  });
+};
+
+// Get recent reports
+const getRecentReports = async (supervisorId, limit = 5) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const reports = db.prepare(`
+        SELECT 
+          r.*,
+          u.full_name as student_name,
+          u.email as student_email
+        FROM reports r
+        INNER JOIN users u ON r.student_id = u.id
+        WHERE r.supervisor_id = ?
+        ORDER BY r.submitted_at DESC
+        LIMIT ?
+      `).all(supervisorId, limit);
+
+      resolve(reports);
+    } catch (error) {
+      console.error('Error getting recent reports:', error);
+      resolve([]);
+    }
+  });
+};
+
+// Get reports grouped by stage
+const getReportsByStage = async (supervisorId) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const stages = ['progress_1', 'progress_2', 'progress_3', 'final'];
+      const reportsByStage = {};
+
+      for (const stage of stages) {
+        const reports = db.prepare(`
+          SELECT 
+            r.*,
+            u.full_name as student_name
+          FROM reports r
+          INNER JOIN users u ON r.student_id = u.id
+          WHERE r.supervisor_id = ? AND r.report_stage = ?
+          ORDER BY r.submitted_at DESC
+        `).all(supervisorId, stage);
+
+        reportsByStage[stage] = reports;
+      }
+
+      resolve(reportsByStage);
+    } catch (error) {
+      console.error('Error getting reports by stage:', error);
+      resolve({});
+    }
+  });
+};
+
+// Get recent activity for supervisor dashboard
+const getRecentActivity = async (supervisorId, limit = 10) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const activities = db.prepare(`
+        SELECT 
+          al.*,
+          u.full_name as user_name,
+          r.title as report_title,
+          s.full_name as student_name
+        FROM activity_logs al
+        LEFT JOIN users u ON al.user_id = u.id
+        LEFT JOIN reports r ON al.entity_id = r.id AND al.entity_type = 'report'
+        LEFT JOIN users s ON r.student_id = s.id
+        WHERE al.user_id = ? OR al.entity_id IN (
+          SELECT r.id FROM reports r 
+          WHERE r.supervisor_id = ?
+        )
+        ORDER BY al.created_at DESC
+        LIMIT ?
+      `).all(supervisorId, supervisorId, limit);
+
+      const formattedActivities = activities.map(activity => ({
+        id: activity.id,
+        action: activity.action,
+        details: generateActivityDescription(activity),
+        user_name: activity.user_name,
+        report_title: activity.report_title,
+        student_name: activity.student_name,
+        created_at: activity.created_at,
+        entity_type: activity.entity_type,
+        entity_id: activity.entity_id
+      }));
+
+      resolve(formattedActivities);
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+      resolve([]);
+    }
+  });
+};
+
+// Generate human-readable activity descriptions
+const generateActivityDescription = (activity) => {
+  const userName = activity.user_name || 'A user';
+  const studentName = activity.student_name || 'a student';
+  const reportTitle = activity.report_title ? `"${activity.report_title}"` : 'a report';
+
+  switch (activity.action) {
+    case 'report_submitted':
+      return `${studentName} submitted report ${reportTitle}`;
+    case 'report_approved':
+      return `${userName} approved ${studentName}'s report`;
+    case 'report_rejected':
+      return `${userName} requested revisions for ${studentName}'s report`;
+    case 'feedback_provided':
+      return `${userName} provided feedback on ${studentName}'s report`;
+    case 'report_moved_stage':
+      return `${studentName}'s report advanced to next stage`;
+    case 'login':
+      return `${userName} logged in`;
+    case 'file_uploaded':
+      return `${studentName} uploaded a new file`;
+    case 'file_updated':
+      return `${studentName} updated their report file`;
+    default:
+      return `${userName} performed ${activity.action}`;
+  }
+};
+
+// Get student reports
+const getStudentReports = async (req, res) => {
   try {
     const { studentId } = req.params;
     const supervisorId = req.session.user?.id;
 
-    if (!studentId || !supervisorId) {
-      req.flash('error', 'Invalid request parameters.');
-      return res.redirect('/supervisor/dashboard');
+    if (!supervisorId) {
+      return res.redirect('/auth/login');
     }
 
+    // Verify the student is assigned to this supervisor
     const assignment = db.prepare(`
-      SELECT s.full_name AS student_name, s.email AS student_email, s.department, s.level,
-      COALESCE(s.registration_number, 'N/A') as registration_number
-      FROM student_supervisor_assignments a
-      LEFT JOIN users s ON s.id = a.student_id
-      WHERE a.student_id = ? AND a.supervisor_id = ? AND a.is_active = 1
+      SELECT * FROM student_supervisor_assignments 
+      WHERE student_id = ? AND supervisor_id = ?
     `).get(studentId, supervisorId);
 
     if (!assignment) {
-      req.flash('error', 'Student not found or not assigned to you.');
-      return res.redirect('/supervisor/dashboard');
+      return res.status(403).render('error', {
+        error: 'You are not authorized to view this student',
+        user: req.session.user
+      });
     }
 
+    const student = db.prepare('SELECT * FROM users WHERE id = ?').get(studentId);
     const reports = db.prepare(`
-      SELECT r.*, COUNT(f.id) as feedback_count
-      FROM reports r
-      LEFT JOIN feedback f ON f.report_id = r.id
-      WHERE r.student_id = ?
-      GROUP BY r.id
-      ORDER BY 
-        CASE r.report_stage 
-          WHEN 'progress_1' THEN 1
-          WHEN 'progress_2' THEN 2
-          WHEN 'progress_3' THEN 3
-          WHEN 'final' THEN 4
-          ELSE 5
-        END,
-        r.submitted_at DESC
+      SELECT * FROM reports 
+      WHERE student_id = ? 
+      ORDER BY submitted_at DESC
     `).all(studentId);
 
-    const reportStats = {
-      total: reports.length,
-      pending: reports.filter(r => r.status === 'pending').length,
-      approved: reports.filter(r => r.status === 'approved').length,
-      withFeedback: reports.filter(r => r.feedback_count > 0).length
-    };
-
-    res.render('layouts/main', {
-      title: `Student Reports - ${assignment.student_name}`,
-      view: '../supervisor/student-reports',
+    res.render('supervisor/student-reports', {
       user: req.session.user,
-      student: assignment,
+      student,
       reports,
-      stats: reportStats
+      title: `Reports - ${student.full_name}`
     });
-
   } catch (error) {
-    console.error('Student Reports Error:', error);
-    req.flash('error', 'Failed to load student reports.');
-    res.redirect('/supervisor/dashboard');
-  }
-};
-
-// GET Report Details
-const getReportDetails = (req, res) => {
-  try {
-    const { id } = req.params;
-    const supervisorId = req.session.user?.id;
-
-    if (!id || !supervisorId) {
-      req.flash('error', 'Invalid request parameters.');
-      return res.redirect('/supervisor/dashboard');
-    }
-
-    const report = db.prepare(`
-      SELECT r.*, s.full_name AS student_name, s.email AS student_email, s.level AS student_level,
-             COALESCE(s.registration_number, 'N/A') as registration_number
-      FROM reports r
-      LEFT JOIN users s ON s.id = r.student_id
-      WHERE r.id = ? AND r.supervisor_id = ?
-    `).get(id, supervisorId);
-
-    if (!report) {
-      req.flash('error', 'Report not found or you are not authorized to view it.');
-      return res.redirect('/supervisor/dashboard');
-    }
-
-    const feedback = db.prepare(`
-      SELECT f.*, u.full_name AS supervisor_name
-      FROM feedback f
-      LEFT JOIN users u ON u.id = f.supervisor_id
-      WHERE f.report_id = ? 
-      ORDER BY f.created_at DESC
-    `).all(id);
-
-    const stageMap = { progress_1: 'progress_2', progress_2: 'progress_3', progress_3: 'final' };
-    const nextStage = stageMap[report.report_stage];
-
-    // Add config for the template
-    const config = {
-      editableFormats: FILE_CONFIG.EDITABLE_EXTENSIONS
-    };
-
-    res.render('layouts/main', {
-      title: `Report Review - ${report.title}`,
-      view: '../supervisor/report-details',
-      user: req.session.user,
-      report,
-      feedback,
-      nextStage,
-      config: config
-    });
-
-  } catch (error) {
-    console.error('Report Details Error:', error);
-    req.flash('error', 'Failed to load report details.');
-    res.redirect('/supervisor/dashboard');
-  }
-};
-
-// POST Feedback
-const postFeedback = async (req, res) => {
-  try {
-    const { reportId, comment, action } = req.body;
-    const supervisorId = req.session.user?.id;
-
-    if (!reportId || !action) {
-      req.flash('error', 'Missing required fields.');
-      return res.redirect('/supervisor/dashboard');
-    }
-
-    const report = db.prepare('SELECT * FROM reports WHERE id = ? AND supervisor_id = ?')
-      .get(reportId, supervisorId);
-
-    if (!report) {
-      req.flash('error', 'Report not found or unauthorized.');
-      return res.redirect('/supervisor/dashboard');
-    }
-
-    db.prepare(`
-      INSERT INTO feedback (report_id, supervisor_id, comment, action_taken)
-      VALUES (?, ?, ?, ?)
-    `).run(reportId, supervisorId, comment || '', action);
-
-    let newStatus = 'feedback_given';
-    if (action === 'approve') newStatus = 'approved';
-    else if (action === 'reject') newStatus = 'rejected';
-    else if (action === 'request_reupload') newStatus = 'reupload_requested';
-
-    db.prepare("UPDATE reports SET status = ?, updated_at = datetime('now') WHERE id = ?")
-      .run(newStatus, reportId);
-
-    await logActivity(supervisorId, `Provided feedback (${action}) for report`, 'report', reportId);
-
-    // Send email notification
-    const student = db.prepare('SELECT * FROM users WHERE id = ?').get(report.student_id);
-    const supervisor = db.prepare('SELECT * FROM users WHERE id = ?').get(supervisorId);
-
-    if (student?.email) {
-      const subject = `📄 Feedback on Your Report: "${report.title}"`;
-      const statusText =
-        action === 'approve' ? '✅ Approved' :
-        action === 'reject' ? '❌ Rejected' :
-        '💬 Feedback Given';
-
-      const html = `
-        <div style="font-family: Arial, sans-serif; color:#333;">
-          <h3>${statusText} by Supervisor</h3>
-          <p><strong>Report:</strong> ${report.title}</p>
-          <p><strong>Comment:</strong> ${comment || 'No comment'}</p>
-          <p><strong>Supervisor:</strong> ${supervisor.full_name}</p>
-          <p>Visit your dashboard to view more details.</p>
-        </div>
-      `;
-
-      await sendEmail(student.email, subject, html);
-    }
-
-    req.flash('success', 'Feedback submitted successfully.');
-    res.redirect(`/supervisor/reports/${reportId}`);
-
-  } catch (error) {
-    console.error('Post Feedback Error:', error);
-    req.flash('error', 'Failed to submit feedback.');
-    res.redirect('/supervisor/dashboard');
-  }
-};
-
-// PUT Move Report to Next Stage
-const moveToNextStage = (req, res) => {
-  try {
-    const { reportId } = req.params;
-    const supervisorId = req.session.user?.id;
-
-    if (!reportId) {
-      return res.status(400).json({ error: 'Report ID missing' });
-    }
-
-    const report = db.prepare('SELECT * FROM reports WHERE id = ? AND supervisor_id = ?')
-      .get(reportId, supervisorId);
-
-    if (!report) {
-      return res.status(404).json({ error: 'Report not found or unauthorized' });
-    }
-
-    const stageMap = { progress_1: 'progress_2', progress_2: 'progress_3', progress_3: 'final' };
-    const nextStage = stageMap[report.report_stage];
-
-    if (!nextStage) {
-      return res.status(400).json({ error: 'Report cannot move to next stage' });
-    }
-
-    db.prepare("UPDATE reports SET report_stage = ?, updated_at = datetime('now') WHERE id = ?")
-      .run(nextStage, reportId);
-
-    logActivity(supervisorId, `Moved report to next stage: ${nextStage}`, 'report', reportId);
-
-    return res.json({ success: true, nextStage });
-
-  } catch (error) {
-    console.error('Move to Next Stage Error:', error);
-    return res.status(500).json({ error: 'Failed to move report to next stage' });
-  }
-};
-
-// FILE OPERATIONS
-
-// GET File content for editing
-const getFileContent = (req, res) => {
-  try {
-    const { id } = req.params;
-    const supervisorId = req.session.user?.id;
-
-    if (!id || !supervisorId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    const report = db.prepare(`
-      SELECT r.file_url, r.file_name 
-      FROM reports r 
-      WHERE r.id = ? AND r.supervisor_id = ?
-    `).get(id, supervisorId);
-
-    if (!report) {
-      return res.status(404).json({ error: 'File not found or unauthorized' });
-    }
-
-    // Check if file exists
-    try {
-      fs.accessSync(report.file_url);
-    } catch (error) {
-      return res.status(404).json({ error: 'File not found on server' });
-    }
-
-    const fileExtension = FileUtils.getFileExtension(report.file_name);
-    
-    // For non-text files, send appropriate response
-    if (!FileUtils.isEditableFile(fileExtension)) {
-      return res.status(400).json({ 
-        error: 'File format not viewable in editor',
-        redirect: `/supervisor/files/download/${id}`
-      });
-    }
-
-    // Read file content
-    const content = fs.readFileSync(report.file_url, 'utf8');
-    
-    // Log the view activity
-    logActivity(supervisorId, `Viewed file: ${report.file_name}`, 'file', id);
-
-    res.set({
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Content-Length': Buffer.byteLength(content, 'utf8'),
-      'X-File-Name': report.file_name,
-      'X-File-Extension': fileExtension
-    });
-
-    res.send(content);
-
-  } catch (error) {
-    console.error('Get File Content Error:', error);
-    res.status(500).json({ 
-      error: 'Failed to read file'
-    });
-  }
-};
-
-// PUT Update file content
-const updateFileContent = (req, res) => {
-  try {
-    const { id } = req.params;
-    const supervisorId = req.session.user?.id;
-    const content = req.body;
-
-    if (!id || !supervisorId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    if (typeof content !== 'string') {
-      return res.status(400).json({ error: 'Invalid content format' });
-    }
-
-    const report = db.prepare(`
-      SELECT r.file_url, r.file_name 
-      FROM reports r 
-      WHERE r.id = ? AND r.supervisor_id = ?
-    `).get(id, supervisorId);
-
-    if (!report) {
-      return res.status(404).json({ error: 'File not found or unauthorized' });
-    }
-
-    // Check if file is editable
-    const fileExtension = FileUtils.getFileExtension(report.file_name);
-    if (!FileUtils.isEditableFile(fileExtension)) {
-      return res.status(400).json({ error: 'File format not editable' });
-    }
-
-    // Create backup before modification
-    const backupPath = `${report.file_url}.backup_${Date.now()}`;
-    try {
-      fs.copyFileSync(report.file_url, backupPath);
-    } catch (backupError) {
-      console.warn('Could not create backup:', backupError.message);
-    }
-
-    // Write new content
-    fs.writeFileSync(report.file_url, content, 'utf8');
-
-    // Update file size in database
-    const stats = fs.statSync(report.file_url);
-    db.prepare(
-      "UPDATE reports SET file_size = ?, updated_at = datetime('now') WHERE id = ?"
-    ).run(stats.size, id);
-
-    // Log the activity
-    logActivity(supervisorId, `Updated file content: ${report.file_name}`, 'file', id);
-
-    res.json({ 
-      success: true, 
-      message: 'File updated successfully',
-      timestamp: new Date().toISOString(),
-      fileSize: FileUtils.formatFileSize(stats.size)
-    });
-
-  } catch (error) {
-    console.error('Update File Content Error:', error);
-    res.status(500).json({ 
-      error: 'Failed to update file'
-    });
-  }
-};
-
-// GET Download file
-const downloadFile = (req, res) => {
-  try {
-    const { id } = req.params;
-    const supervisorId = req.session.user?.id;
-
-    console.log('Download request - Report ID:', id, 'Supervisor ID:', supervisorId);
-
-    const report = db.prepare(`
-      SELECT r.file_url, r.file_name, r.mime_type
-      FROM reports r 
-      WHERE r.id = ? AND r.supervisor_id = ?
-    `).get(id, supervisorId);
-
-    if (!report) {
-      console.log('Report not found for supervisor');
-      return res.status(404).render('error', {
-        message: 'File not found or you are not authorized to download it.',
-        error: { status: 404, stack: '' }
-      });
-    }
-
-    console.log('Report found:', report.file_name, 'at URL:', report.file_url);
-
-    // Check if file exists
-    try {
-      fs.accessSync(report.file_url);
-      console.log('File exists and is accessible');
-    } catch (error) {
-      console.log('File access error:', error.message);
-      return res.status(404).render('error', {
-        message: 'File not found on server. It may have been moved or deleted.',
-        error: { status: 404, stack: '' }
-      });
-    }
-
-    const fileExtension = FileUtils.getFileExtension(report.file_name);
-    const mimeType = FileUtils.getMimeType(fileExtension);
-    const sanitizedFileName = FileUtils.sanitizeFileName(report.file_name);
-
-    console.log('Setting headers for download:', {
-      mimeType,
-      fileName: sanitizedFileName
-    });
-
-    // Set headers
-    res.setHeader('Content-Type', mimeType);
-    res.setHeader('Content-Disposition', `attachment; filename="${sanitizedFileName}"`);
-    res.setHeader('X-File-Name', sanitizedFileName);
-
-    // Get file stats
-    const stats = fs.statSync(report.file_url);
-    res.setHeader('Content-Length', stats.size);
-    res.setHeader('Last-Modified', stats.mtime.toUTCString());
-
-    console.log('Starting file stream...');
-
-    // Stream file to response
-    const fileStream = fs.createReadStream(report.file_url);
-    
-    fileStream.on('open', () => {
-      console.log('File stream opened successfully');
-    });
-    
-    fileStream.on('error', (error) => {
-      console.error('File stream error:', error);
-      if (!res.headersSent) {
-        return res.status(500).render('error', {
-          message: 'Error reading file during download',
-          error: { status: 500, stack: '' }
-        });
-      }
-    });
-
-    fileStream.pipe(res);
-
-    // Log download activity
-    logActivity(supervisorId, `Downloaded file: ${report.file_name}`, 'file', id);
-
-  } catch (error) {
-    console.error('Download File Error:', error);
-    
-    if (res.headersSent) {
-      console.log('Headers already sent, cannot render error page');
-      return;
-    }
-    
+    console.error('Error getting student reports:', error);
     res.status(500).render('error', {
-      message: 'Failed to download file. Please try again.',
-      error: process.env.NODE_ENV === 'development' ? { status: 500, stack: error.stack } : { status: 500, stack: '' }
+      error: 'Failed to load student reports',
+      user: req.session.user
+    });
+  }
+};
+// === GET SUPERVISORS MANAGEMENT ===
+const getSupervisors = async (req, res) => {
+  try {
+    const user = req.session.user;
+    const userLevel = user.level;
+
+    // Get all supervisors with their assigned student count
+    const supervisorsStmt = db.prepare(`
+      SELECT 
+        u.*,
+        COUNT(a.id) as assigned_students,
+        GROUP_CONCAT(s.full_name) as student_names
+      FROM users u
+      LEFT JOIN student_supervisor_assignments a ON u.id = a.supervisor_id AND a.is_active = 1
+      LEFT JOIN users s ON a.student_id = s.id
+      WHERE u.role = 'supervisor'
+      GROUP BY u.id
+      ORDER BY u.full_name
+    `);
+    const supervisors = supervisorsStmt.all();
+
+    // Get assigned students details for each supervisor
+    const supervisorsWithDetails = supervisors.map(supervisor => {
+      const assignedStudentsStmt = db.prepare(`
+        SELECT 
+          s.id, s.full_name, s.department, a.id as assignment_id
+        FROM student_supervisor_assignments a
+        JOIN users s ON a.student_id = s.id
+        WHERE a.supervisor_id = ? AND a.is_active = 1
+      `);
+      const assignedStudentsList = assignedStudentsStmt.all(supervisor.id);
+      
+      return {
+        ...supervisor,
+        assignedStudentsList,
+        assignedStudents: parseInt(supervisor.assigned_students) || 0
+      };
+    });
+
+    // Get unassigned students for assignment
+    const unassignedStmt = db.prepare(`
+      SELECT u.* 
+      FROM users u
+      LEFT JOIN student_supervisor_assignments a ON u.id = a.student_id AND a.is_active = 1
+      WHERE u.role = 'student' AND u.level = ? AND a.id IS NULL
+      ORDER BY u.full_name
+    `);
+    const unassignedStudentsList = unassignedStmt.all(userLevel);
+
+    // Calculate statistics
+    const totalSupervisors = supervisors.length;
+    const totalCapacity = supervisors.reduce((sum, s) => sum + (s.max_students || 5), 0);
+    const totalAssigned = supervisors.reduce((sum, s) => sum + (parseInt(s.assigned_students) || 0), 0);
+    const availableCapacity = totalCapacity - totalAssigned;
+    const averageLoad = totalSupervisors > 0 ? (totalAssigned / totalSupervisors).toFixed(1) : 0;
+    const fullyBookedCount = supervisors.filter(s => (parseInt(s.assigned_students) || 0) >= (s.max_students || 5)).length;
+
+    res.render('coordinator/supervisors', {
+      title: 'Supervisors Management',
+      user,
+      level: userLevel,
+      supervisors: supervisorsWithDetails,
+      unassignedStudentsList,
+      totalSupervisors,
+      totalCapacity,
+      totalAssigned,
+      availableCapacity,
+      averageLoad,
+      fullyBookedCount,
+      success: req.query.success || null,
+      error: req.query.error || null
+    });
+  } catch (error) {
+    console.error('Supervisors management error:', error);
+    res.status(500).render('error', {
+      title: 'Error',
+      user: req.session.user,
+      message: 'Failed to load supervisors management',
+      error: error.message
     });
   }
 };
 
-// GET File information
-const getFileInfo = (req, res) => {
+// === GET ASSIGNMENTS MANAGEMENT ===
+const getAssignments = async (req, res) => {
+  try {
+    const user = req.session.user;
+    const userLevel = user.level;
+
+    // Get current assignments
+    const currentAssignmentsStmt = db.prepare(`
+      SELECT 
+        a.id as assignment_id,
+        a.assigned_date,
+        s.id as student_id,
+        s.full_name as student_full_name,
+        s.email as student_email,
+        s.department as student_department,
+        sup.id as supervisor_id,
+        sup.full_name as supervisor_full_name,
+        sup.email as supervisor_email,
+        c.full_name as coordinator_name
+      FROM student_supervisor_assignments a
+      JOIN users s ON a.student_id = s.id
+      JOIN users sup ON a.supervisor_id = sup.id
+      JOIN users c ON a.level_coordinator_id = c.id
+      WHERE a.is_active = 1 AND s.level = ?
+      ORDER BY a.assigned_date DESC
+    `);
+    const currentAssignments = currentAssignmentsStmt.all(userLevel);
+
+    // Get assignment history
+    const historyStmt = db.prepare(`
+      SELECT 
+        a.*,
+        s.full_name as student_full_name,
+        sup.full_name as supervisor_full_name,
+        c.full_name as coordinator_name
+      FROM student_supervisor_assignments a
+      JOIN users s ON a.student_id = s.id
+      JOIN users sup ON a.supervisor_id = sup.id
+      JOIN users c ON a.level_coordinator_id = c.id
+      WHERE s.level = ?
+      ORDER BY a.assigned_date DESC
+      LIMIT 50
+    `);
+    const assignmentHistory = historyStmt.all(userLevel);
+
+    // Get unassigned students
+    const unassignedStmt = db.prepare(`
+      SELECT u.* 
+      FROM users u
+      LEFT JOIN student_supervisor_assignments a ON u.id = a.student_id AND a.is_active = 1
+      WHERE u.role = 'student' AND u.level = ? AND a.id IS NULL
+      ORDER BY u.full_name
+    `);
+    const unassignedStudentsList = unassignedStmt.all(userLevel);
+
+    // Get available supervisors with capacity
+    const availableSupervisorsStmt = db.prepare(`
+      SELECT 
+        u.*,
+        COUNT(a.id) as assigned_count,
+        (u.max_students - COUNT(a.id)) as available_slots
+      FROM users u
+      LEFT JOIN student_supervisor_assignments a ON u.id = a.supervisor_id AND a.is_active = 1
+      WHERE u.role = 'supervisor'
+      GROUP BY u.id
+      HAVING available_slots > 0
+      ORDER BY u.full_name
+    `);
+    const availableSupervisors = availableSupervisorsStmt.all();
+
+    // Get all students for statistics
+    const studentsStmt = db.prepare(`
+      SELECT * FROM users 
+      WHERE role = 'student' AND level = ?
+    `);
+    const allStudents = studentsStmt.all(userLevel);
+
+    // Calculate statistics
+    const totalStudents = allStudents.length;
+    const assignedStudents = currentAssignments.length;
+    const unassignedStudents = unassignedStudentsList.length;
+    const availableCapacity = availableSupervisors.reduce((sum, s) => sum + (s.available_slots || 0), 0);
+
+    res.render('coordinator/assignments', {
+      title: 'Assignments Management',
+      user,
+      level: userLevel,
+      currentAssignments,
+      assignmentHistory,
+      unassignedStudentsList,
+      availableSupervisors,
+      totalStudents,
+      assignedStudents,
+      unassignedStudents,
+      availableCapacity,
+      success: req.query.success || null,
+      error: req.query.error || null
+    });
+  } catch (error) {
+    console.error('Assignments management error:', error);
+    res.status(500).render('error', {
+      title: 'Error',
+      user: req.session.user,
+      message: 'Failed to load assignments management',
+      error: error.message
+    });
+  }
+};
+
+// Get report details
+const getReportDetails = async (req, res) => {
   try {
     const { id } = req.params;
     const supervisorId = req.session.user?.id;
 
-    if (!id || !supervisorId) {
-      return res.status(401).json({ error: 'Authentication required' });
+    if (!supervisorId) {
+      return res.redirect('/auth/login');
     }
 
     const report = db.prepare(`
       SELECT 
         r.*,
-        s.full_name as student_name,
-        sup.full_name as supervisor_name,
-        (SELECT COUNT(*) FROM feedback f WHERE f.report_id = r.id) as feedback_count
+        u.full_name as student_name,
+        u.email as student_email
       FROM reports r
-      LEFT JOIN users s ON s.id = r.student_id
-      LEFT JOIN users sup ON sup.id = r.supervisor_id
+      INNER JOIN users u ON r.student_id = u.id
       WHERE r.id = ? AND r.supervisor_id = ?
     `).get(id, supervisorId);
 
     if (!report) {
-      return res.status(404).json({ error: 'File not found or unauthorized' });
+      return res.status(404).render('error', {
+        error: 'Report not found',
+        user: req.session.user
+      });
     }
 
-    // Get file stats
-    let fileStats = {};
-    try {
-      const stats = fs.statSync(report.file_url);
-      fileStats = {
-        size: FileUtils.formatFileSize(stats.size),
-        modified: stats.mtime,
-        created: stats.birthtime,
-        exists: true
-      };
-    } catch (error) {
-      fileStats.exists = false;
-    }
+    const feedback = db.prepare(`
+      SELECT f.*, u.full_name as supervisor_name
+      FROM feedback f
+      INNER JOIN users u ON f.supervisor_id = u.id
+      WHERE f.report_id = ?
+      ORDER BY f.created_at DESC
+    `).all(id);
 
-    res.json({
-      success: true,
-      file: {
-        id: report.id,
-        title: report.title,
-        fileName: report.file_name,
-        fileSize: FileUtils.formatFileSize(report.file_size),
-        mimeType: report.mime_type,
-        reportStage: report.report_stage,
-        status: report.status,
-        studentName: report.student_name,
-        supervisorName: report.supervisor_name,
-        submittedAt: report.submitted_at,
-        feedbackCount: report.feedback_count,
-        isEditable: FileUtils.isEditableFile(FileUtils.getFileExtension(report.file_name)),
-        fileStats: fileStats
-      }
+    const hodFeedback = db.prepare(`
+      SELECT hf.*, u.full_name as hod_name
+      FROM hod_feedback hf
+      INNER JOIN users u ON hf.hod_id = u.id
+      WHERE hf.report_id = ?
+      ORDER BY hf.created_at DESC
+    `).all(id);
+
+    // Determine next stage
+    const stages = ['progress_1', 'progress_2', 'progress_3', 'final'];
+    const currentIndex = stages.indexOf(report.report_stage);
+    const nextStage = currentIndex !== -1 && currentIndex < stages.length - 1 ? stages[currentIndex + 1] : null;
+
+    const success = req.flash('success')[0] || null;
+    const error = req.flash('error')[0] || null;
+
+    // Render using main layout
+    res.render('layouts/main', {
+      title: `Report - ${report.title}`,
+      view: '../supervisor/report-details',
+      user: req.session.user,
+      report: report,
+      feedback: feedback,
+      hodFeedback: hodFeedback,
+      nextStage: nextStage,
+      success: success,
+      error: error
     });
-
   } catch (error) {
-    console.error('Get File Info Error:', error);
-    res.status(500).json({ 
-      error: 'Failed to get file information'
+    console.error('Error getting report details:', error);
+    res.status(500).render('error', {
+      error: 'Failed to load report details',
+      user: req.session.user
     });
   }
 };
 
-// GET File preview
-const getFilePreview = (req, res) => {
+
+// Submit feedback
+const postFeedback = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { report_id, comment, action_taken } = req.body;
     const supervisorId = req.session.user?.id;
 
-    if (!id || !supervisorId) {
-      return res.status(401).json({ error: 'Authentication required' });
+    if (!supervisorId) {
+      return res.redirect(`/supervisor/reports?error=${encodeURIComponent('Not authenticated')}`);
     }
 
+    // Verify report exists and belongs to supervisor
     const report = db.prepare(`
-      SELECT r.file_url, r.file_name, r.mime_type
-      FROM reports r 
+      SELECT r.*, u.full_name as student_name 
+      FROM reports r
+      INNER JOIN users u ON r.student_id = u.id
       WHERE r.id = ? AND r.supervisor_id = ?
-    `).get(id, supervisorId);
+    `).get(report_id, supervisorId);
 
     if (!report) {
-      return res.status(404).json({ error: 'File not found or unauthorized' });
+      return res.redirect(`/supervisor/reports?error=${encodeURIComponent('Report not found')}`);
     }
 
-    const fileExtension = FileUtils.getFileExtension(report.file_name);
-    const previewableTypes = ['pdf', 'jpg', 'jpeg', 'png', 'gif'];
-
-    if (!previewableTypes.includes(fileExtension)) {
-      return res.status(400).json({ error: 'File type not previewable' });
+    // Validate required fields
+    if (!comment || !comment.trim()) {
+      return res.redirect(`/supervisor/reports/${report_id}?error=${encodeURIComponent('Feedback comment is required')}`);
     }
 
-    // Check if file exists
+    if (!action_taken) {
+      return res.redirect(`/supervisor/reports/${report_id}?error=${encodeURIComponent('Action taken is required')}`);
+    }
+
+    // Insert feedback
+    const result = db.prepare(`
+      INSERT INTO feedback (report_id, supervisor_id, comment, action_taken)
+      VALUES (?, ?, ?, ?)
+    `).run(report_id, supervisorId, comment.trim(), action_taken);
+
+    // Update report status based on action
+    let newStatus = 'feedback_given';
+    let successMessage = 'Feedback submitted successfully!';
+
+    if (action_taken === 'minor_changes' || action_taken === 'no_action') {
+      newStatus = 'approved';
+      successMessage = 'Report approved with feedback!';
+    } else if (action_taken === 'revise') {
+      newStatus = 'rejected';
+      successMessage = 'Report returned for revision!';
+    } else if (action_taken === 'meet_discuss') {
+      successMessage = 'Feedback submitted! Meeting requested to discuss.';
+    }
+
+    db.prepare(`
+      UPDATE reports SET status = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `).run(newStatus, report_id);
+
+    // Log activity (with error handling since we don't want to break the flow)
     try {
-      fs.accessSync(report.file_url);
-    } catch (error) {
-      return res.status(404).json({ error: 'File not found on server' });
+      logActivity(supervisorId, 'feedback_provided', 'report', report_id, {
+        student_name: report.student_name,
+        action: action_taken
+      });
+    } catch (logError) {
+      console.error('Activity logging error:', logError);
+      // Continue even if logging fails
     }
 
-    const mimeType = FileUtils.getMimeType(fileExtension);
-    res.setHeader('Content-Type', mimeType);
-    
-    if (fileExtension === 'pdf') {
-      res.setHeader('Content-Disposition', 'inline; filename="preview.pdf"');
-    } else {
-      res.setHeader('Content-Disposition', 'inline');
-    }
-
-    const fileStream = fs.createReadStream(report.file_url);
-    fileStream.pipe(res);
-
-    logActivity(supervisorId, `Previewed file: ${report.file_name}`, 'file', id);
+    // Redirect back with success message - THIS IS THE KEY CHANGE
+    return res.redirect(`/supervisor/reports/${report_id}?success=${encodeURIComponent(successMessage)}`);
 
   } catch (error) {
-    console.error('File Preview Error:', error);
-    res.status(500).json({ 
-      error: 'Failed to generate file preview'
+    console.error('Error submitting feedback:', error);
+    return res.redirect(`/supervisor/reports?error=${encodeURIComponent('Failed to submit feedback. Please try again.')}`);
+  }
+};
+
+// Move report to next stage
+const moveToNextStage = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const supervisorId = req.session.user?.id;
+
+    if (!supervisorId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authenticated'
+      });
+    }
+
+    // Verify report exists and belongs to supervisor
+    const report = db.prepare(`
+      SELECT r.*, u.full_name as student_name 
+      FROM reports r
+      INNER JOIN users u ON r.student_id = u.id
+      WHERE r.id = ? AND r.supervisor_id = ?
+    `).get(reportId, supervisorId);
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
+      });
+    }
+
+    // Determine next stage
+    const stages = ['progress_1', 'progress_2', 'progress_3', 'final'];
+    const currentIndex = stages.indexOf(report.report_stage);
+    
+    if (currentIndex === -1 || currentIndex === stages.length - 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Report is already at the final stage'
+      });
+    }
+
+    const nextStage = stages[currentIndex + 1];
+
+    // Update report stage
+    db.prepare(`
+      UPDATE reports 
+      SET report_stage = ?, status = 'pending', updated_at = datetime('now')
+      WHERE id = ?
+    `).run(nextStage, reportId);
+
+    // Log activity
+    logActivity(supervisorId, 'report_moved_stage', 'report', reportId, {
+      student_name: report.student_name,
+      from_stage: report.report_stage,
+      to_stage: nextStage
+    });
+
+    res.json({
+      success: true,
+      message: `Report moved to ${nextStage.replace('_', ' ')} stage`,
+      nextStage
+    });
+  } catch (error) {
+    console.error('Error moving report stage:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to move report to next stage'
     });
   }
 };
@@ -755,12 +876,9 @@ module.exports = {
   getDashboard,
   getStudentReports,
   getReportDetails,
+  getAllReports,
+  getAllStudents,
+  getAssignedStudents,
   postFeedback,
-  moveToNextStage,
-  // File operations
-  getFileContent,
-  updateFileContent,
-  downloadFile,
-  getFileInfo,
-  getFilePreview
+  moveToNextStage
 };

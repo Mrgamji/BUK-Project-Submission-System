@@ -1,0 +1,229 @@
+<div class="row mb-4">
+    <div class="col-12">
+      <h1 class="page-title"><i class="bi bi-person-workspace me-2"></i>My Supervisor</h1>
+      <p class="page-subtitle">View your supervisor details and contact information</p>
+    </div>
+  </div>
+  
+  <% if (supervisor) { %>
+  <!-- Supervisor Assigned View -->
+  <div class="row">
+    <!-- Main Supervisor Card -->
+    <div class="col-lg-8">
+      <div class="card mb-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">
+            <i class="bi bi-person-check me-2 text-success"></i>Supervisor Details
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row align-items-center">
+            <!-- Profile Image & Basic Info -->
+            <div class="col-md-4 text-center mb-4 mb-md-0">
+              <div class="supervisor-avatar mx-auto mb-3">
+                <div class="avatar-placeholder bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 120px; height: 120px; font-size: 2.5rem;">
+                  <i class="bi bi-person-fill"></i>
+                </div>
+              </div>
+              <h4 class="mb-1"><%= supervisor.full_name %></h4>
+              <span class="badge bg-success fs-6">Supervisor</span>
+            </div>
+            
+            <!-- Detailed Information -->
+            <div class="col-md-8">
+              <div class="row g-3">
+                <div class="col-sm-6">
+                  <div class="info-item">
+                    <i class="bi bi-envelope-fill text-primary me-2"></i>
+                    <strong>Email</strong>
+                    <div class="mt-1">
+                      <a href="mailto:<%= supervisor.email %>" class="text-decoration-none">
+                        <%= supervisor.email %>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-sm-6">
+                  <div class="info-item">
+                    <i class="bi bi-building text-primary me-2"></i>
+                    <strong>Department</strong>
+                    <div class="mt-1">
+                      <%= supervisor.department || 'Computer Science' %>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-sm-6">
+                  <div class="info-item">
+                    <i class="bi bi-telephone-fill text-primary me-2"></i>
+                    <strong>Office Phone</strong>
+                    <div class="mt-1">
+                      <%= supervisor.phone || '+234 123 456 7890' %>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-sm-6">
+                  <div class="info-item">
+                    <i class="bi bi-geo-alt-fill text-primary me-2"></i>
+                    <strong>Office Location</strong>
+                    <div class="mt-1">
+                      <%= supervisor.office_location || 'Faculty Building, Room 205' %>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-12">
+                  <div class="info-item">
+                    <i class="bi bi-clock-fill text-primary me-2"></i>
+                    <strong>Office Hours</strong>
+                    <div class="mt-1">
+                      <%= supervisor.office_hours || 'Monday - Friday: 10:00 AM - 4:00 PM' %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Contact Actions -->
+      <div class="card mb-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">
+            <i class="bi bi-chat-dots me-2 text-primary"></i>Contact Supervisor
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <a href="mailto:<%= supervisor.email %>" class="btn btn-outline-primary w-100 py-3">
+                <i class="bi bi-envelope me-2"></i>
+                <div>Send Email</div>
+                <small class="text-muted">Direct message</small>
+              </a>
+            </div>
+            <div class="col-md-4">
+              <button class="btn btn-outline-success w-100 py-3" data-bs-toggle="modal" data-bs-target="#scheduleModal">
+                <i class="bi bi-calendar-check me-2"></i>
+                <div>Schedule Meeting</div>
+                <small class="text-muted">Book appointment</small>
+              </button>
+            </div>
+            <div class="col-md-4">
+              <button class="btn btn-outline-info w-100 py-3" data-bs-toggle="modal" data-bs-target="#messageModal">
+                <i class="bi bi-chat-square-text me-2"></i>
+                <div>Send Message</div>
+                <small class="text-muted">Internal system</small>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Sidebar Information -->
+    <div class="col-lg-4">
+      <!-- Quick Stats -->
+      <div class="card mb-4">
+        <div class="card-header bg-white">
+          <h6 class="mb-0">
+            <i class="bi bi-graph-up me-2 text-primary"></i>Supervision Stats
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="stats-grid">
+            <div class="stat-item text-center p-3">
+              <div class="stat-value text-primary">0</div>
+              <div class="stat-label">Reports Reviewed</div>
+            </div>
+            <div class="stat-item text-center p-3">
+              <div class="stat-value text-success">0</div>
+              <div class="stat-label">Meetings Held</div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Quick Actions -->
+      <div class="card mb-4">
+        <div class="card-header bg-white">
+          <h6 class="mb-0">
+            <i class="bi bi-lightning me-2 text-primary"></i>Quick Actions
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a href="/student/upload-report" class="btn btn-primary">
+              <i class="bi bi-cloud-upload me-2"></i>Upload New Report
+            </a>
+            <a href="/student/dashboard" class="btn btn-outline-primary">
+              <i class="bi bi-speedometer2 me-2"></i>View Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <% } else { %>
+  <!-- No Supervisor Assigned View -->
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <div class="card text-center py-5">
+        <div class="card-body">
+          <div class="empty-state-icon mb-4">
+            <i class="bi bi-person-x display-1 text-muted"></i>
+          </div>
+          <h3 class="text-muted mb-3">No Supervisor Assigned</h3>
+          <p class="text-muted mb-4">
+            You haven't been assigned a supervisor yet. Please wait for your level coordinator 
+            to assign a supervisor to guide you through your project.
+          </p>
+          
+          <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="/student/dashboard" class="btn btn-primary">
+              <i class="bi bi-speedometer2 me-2"></i>Back to Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% } %>
+  
+  <style>
+    .supervisor-avatar .avatar-placeholder {
+      background: linear-gradient(135deg, var(--buk-blue) 0%, #004080 100%);
+    }
+  
+    .info-item {
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid var(--buk-blue);
+    }
+  
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+  
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+  
+    .stat-label {
+      font-size: 0.875rem;
+      color: #6c757d;
+    }
+  
+    .empty-state-icon {
+      opacity: 0.5;
+    }
+  </style>

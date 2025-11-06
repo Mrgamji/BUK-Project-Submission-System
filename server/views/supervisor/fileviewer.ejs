@@ -1,0 +1,638 @@
+<div class="container-fluid vh-100 d-flex flex-column">
+    <!-- Header -->
+    <div class="border-bottom bg-white">
+      <div class="container-fluid py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h1 class="h4 mb-1 fw-bold">
+              <i class="bi bi-file-earmark-text me-2"></i>File Viewer
+            </h1>
+            <p class="text-muted mb-0">
+              <%= file.studentName %> - <%= file.title %>
+            </p>
+          </div>
+          <div class="d-flex gap-2">
+            <% if (file.isEditable) { %>
+              <button id="saveBtn" class="btn btn-success" disabled>
+                <i class="bi bi-check-circle me-1"></i>Save Changes
+              </button>
+              <button id="resetBtn" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-clockwise me-1"></i>Reset
+              </button>
+            <% } %>
+            <a href="<%= file.downloadUrl %>" class="btn btn-primary" download>
+              <i class="bi bi-download me-1"></i>Download
+            </a>
+            <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#fileInfoModal">
+              <i class="bi bi-info-circle me-1"></i>Info
+            </button>
+            <a href="javascript:history.back()" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i>Back
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- File Content Area -->
+    <div class="flex-grow-1 position-relative">
+      <% if (file.isPdf) { %>
+        <!-- PDF Viewer -->
+        <div id="pdfViewer" class="h-100 w-100">
+          <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="text-center">
+              <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading PDF...</span>
+              </div>
+              <p>Loading PDF document...</p>
+            </div>
+          </div>
+        </div>
+      <% } else if (file.isImage) { %>
+        <!-- Image Viewer -->
+        <div class="h-100 d-flex justify-content-center align-items-center bg-dark">
+          <div class="text-center">
+            <img id="imageView" src="<%= file.downloadUrl %>" 
+                 class="img-fluid max-vh-80 max-vw-80" 
+                 style="max-height: 80vh; max-width: 80vw;"
+                 alt="<%= file.name %>">
+            <div class="mt-3 text-white">
+              <small><%= file.name %></small>
+            </div>
+          </div>
+        </div>
+      <% } else if (file.isEditable) { %>
+        <!-- Code Editor -->
+        <div id="editorContainer" class="h-100 w-100"></div>
+      <% } else { %>
+        <!-- Fallback Text Viewer -->
+        <div class="h-100 bg-light">
+          <pre class="h-100 p-4 m-0 bg-white border-0"><code id="textContent"><%= file.content %></code></pre>
+        </div>
+      <% } %>
+    </div>
+  
+    <!-- Status Bar -->
+    <div class="border-top bg-light py-2 px-3">
+      <div class="d-flex justify-content-between align-items-center small text-muted">
+        <div>
+          <span class="me-3">
+            <i class="bi bi-filetype-<%= file.extension %> me-1"></i><%= file.name %>
+          </span>
+          <% if (file.isCode) { %>
+            <span class="me-3">
+              <i class="bi bi-code-slash me-1"></i><%= file.language %>
+            </span>
+          <% } %>
+        </div>
+        <div>
+          <span id="statusMessage" class="me-3">Ready</span>
+          <span id="lineInfo">Line 1, Column 1</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- File Info Modal -->
+  <div class="modal fade" id="fileInfoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-info-circle me-2"></i>File Information
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="fileInfoContent">
+          <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading file information...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading file information...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Monaco Editor Script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+  <!-- PDF.js Script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  
+  <style>
+  #editorContainer {
+    min-height: 400px;
+  }
+  
+  .max-vh-80 {
+    max-height: 80vh !important;
+  }
+  
+  .max-vw-80 {
+    max-width: 80vw !important;
+  }
+  
+  /* PDF Viewer Styles */
+  .pdf-viewer-container {
+    height: 100%;
+    overflow: auto;
+    background: #525659;
+  }
+  
+  .pdf-page {
+    margin: 10px auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  }
+  
+  .pdf-controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+  }
+  </style>
+  
+  <script>
+  // Configuration
+  const config = {
+    fileId: '<%= file.id %>',
+    fileName: '<%= file.name %>',
+    fileExtension: '<%= file.extension %>',
+    isEditable: <%= file.isEditable %>,
+    isCode: <%= file.isCode %>,
+    isPdf: <%= file.isPdf %>,
+    isImage: <%= file.isImage %>,
+    language: '<%= file.language %>',
+    initialContent: `<%- file.content %>`,
+    downloadUrl: '<%= file.downloadUrl %>',
+    infoUrl: '<%= file.infoUrl %>'
+  };
+  
+  let editor = null;
+  let isModified = false;
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeFileViewer();
+    setupEventListeners();
+  });
+  
+  function initializePdfViewer() {
+  const pdfViewer = document.getElementById('pdfViewer');
+  
+  // FIX: Use the direct PDF URL instead of download URL
+  const pdfUrl = '<%= file.pdfDirectUrl %>';
+  
+  console.log('Loading PDF from:', pdfUrl);
+
+  // Set up PDF.js
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  pdfViewer.innerHTML = `
+    <div class="pdf-viewer-container">
+      <div class="pdf-controls">
+        <button class="btn btn-sm btn-outline-primary me-2" id="prevPage">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <span class="mx-2" id="pageInfo">Page: <span id="currentPage">1</span> / <span id="totalPages">0</span></span>
+        <button class="btn btn-sm btn-outline-primary ms-2" id="nextPage">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary ms-2" id="zoomOut">
+          <i class="bi bi-dash"></i>
+        </button>
+        <span class="mx-2" id="zoomLevel">100%</span>
+        <button class="btn btn-sm btn-outline-secondary me-2" id="zoomIn">
+          <i class="bi bi-plus"></i>
+        </button>
+      </div>
+      <div id="pdfPages" class="p-3"></div>
+    </div>
+  `;
+
+  let currentPage = 1;
+  let totalPages = 0;
+  let scale = 1.5;
+
+  console.log('Starting PDF load...');
+  
+  const loadingTask = pdfjsLib.getDocument(pdfUrl);
+  
+  loadingTask.promise.then(function(pdf) {
+    console.log('PDF loaded successfully, total pages:', pdf.numPages);
+    totalPages = pdf.numPages;
+    document.getElementById('totalPages').textContent = totalPages;
+    renderPage(currentPage, pdf);
+  }).catch(function(error) {
+    console.error('PDF loading error:', error);
+    pdfViewer.innerHTML = `
+      <div class="d-flex justify-content-center align-items-center h-100">
+        <div class="text-center">
+          <i class="bi bi-exclamation-triangle text-danger display-4"></i>
+          <h4 class="mt-3 text-danger">Failed to load PDF</h4>
+          <p class="text-muted">Error: ${error.message}</p>
+          <a href="<%= file.downloadUrl %>" class="btn btn-primary mt-2" download>
+            <i class="bi bi-download me-1"></i>Download Instead
+          </a>
+        </div>
+      </div>
+    `;
+  });
+
+  function renderPage(pageNum, pdf) {
+    console.log('Rendering page:', pageNum);
+    pdf.getPage(pageNum).then(function(page) {
+      const viewport = page.getViewport({ scale: scale });
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport
+      };
+
+      page.render(renderContext).promise.then(function() {
+        const pdfPages = document.getElementById('pdfPages');
+        pdfPages.innerHTML = '';
+        canvas.className = 'pdf-page';
+        pdfPages.appendChild(canvas);
+        document.getElementById('currentPage').textContent = pageNum;
+        document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
+        console.log('Page rendered successfully');
+      });
+    }).catch(function(error) {
+      console.error('Page rendering error:', error);
+    });
+  }
+
+  // Event listeners for PDF controls
+  document.getElementById('prevPage').addEventListener('click', function() {
+    if (currentPage > 1) {
+      currentPage--;
+      renderPage(currentPage, loadingTask.promise);
+    }
+  });
+
+  document.getElementById('nextPage').addEventListener('click', function() {
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderPage(currentPage, loadingTask.promise);
+    }
+  });
+
+  document.getElementById('zoomIn').addEventListener('click', function() {
+    scale += 0.25;
+    renderPage(currentPage, loadingTask.promise);
+  });
+
+  document.getElementById('zoomOut').addEventListener('click', function() {
+    if (scale > 0.5) {
+      scale -= 0.25;
+      renderPage(currentPage, loadingTask.promise);
+    }
+  });
+}
+  function initializeFileViewer() {
+    if (config.isPdf) {
+      initializePdfViewer();
+    } else if (config.isImage) {
+      initializeImageViewer();
+    } else if (config.isEditable) {
+      initializeCodeEditor();
+    } else {
+      initializeTextViewer();
+    }
+  }
+  
+  function initializeCodeEditor() {
+    // Configure Monaco Editor
+    require.config({ 
+      paths: { 
+        'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' 
+      } 
+    });
+  
+    require(['vs/editor/editor.main'], function() {
+      editor = monaco.editor.create(document.getElementById('editorContainer'), {
+        value: config.initialContent,
+        language: config.language,
+        theme: 'vs-light',
+        fontSize: 14,
+        lineNumbers: 'on',
+        roundedSelection: true,
+        scrollBeyondLastLine: false,
+        readOnly: !config.isEditable,
+        automaticLayout: true,
+        minimap: {
+          enabled: true
+        },
+        wordWrap: 'on'
+      });
+  
+      // Track changes
+      editor.onDidChangeModelContent(function() {
+        isModified = true;
+        document.getElementById('saveBtn').disabled = false;
+        updateStatus('Modified - Unsaved changes');
+      });
+  
+      // Track cursor position
+      editor.onDidChangeCursorPosition(function(e) {
+        updateLineInfo(e.position.lineNumber, e.position.column);
+      });
+  
+      updateLineInfo(1, 1);
+    });
+  }
+  
+  function initializePdfViewer() {
+    const pdfViewer = document.getElementById('pdfViewer');
+    const pdfUrl = config.downloadUrl;
+  
+    // Set up PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  
+    pdfViewer.innerHTML = `
+      <div class="pdf-viewer-container">
+        <div class="pdf-controls">
+          <button class="btn btn-sm btn-outline-primary me-2" id="prevPage">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <span class="mx-2" id="pageInfo">Page: <span id="currentPage">1</span> / <span id="totalPages">0</span></span>
+          <button class="btn btn-sm btn-outline-primary ms-2" id="nextPage">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary ms-2" id="zoomOut">
+            <i class="bi bi-dash"></i>
+          </button>
+          <span class="mx-2" id="zoomLevel">100%</span>
+          <button class="btn btn-sm btn-outline-secondary me-2" id="zoomIn">
+            <i class="bi bi-plus"></i>
+          </button>
+        </div>
+        <div id="pdfPages" class="p-3"></div>
+      </div>
+    `;
+  
+    let currentPage = 1;
+    let totalPages = 0;
+    let scale = 1.5;
+  
+    const loadingTask = pdfjsLib.getDocument(pdfUrl);
+    loadingTask.promise.then(function(pdf) {
+      totalPages = pdf.numPages;
+      document.getElementById('totalPages').textContent = totalPages;
+      renderPage(currentPage, pdf);
+    });
+  
+    function renderPage(pageNum, pdf) {
+      pdf.getPage(pageNum).then(function(page) {
+        const viewport = page.getViewport({ scale: scale });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+  
+        const renderContext = {
+          canvasContext: context,
+          viewport: viewport
+        };
+  
+        page.render(renderContext).promise.then(function() {
+          const pdfPages = document.getElementById('pdfPages');
+          pdfPages.innerHTML = '';
+          canvas.className = 'pdf-page';
+          pdfPages.appendChild(canvas);
+          document.getElementById('currentPage').textContent = pageNum;
+          document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
+        });
+      });
+    }
+  
+    // Event listeners for PDF controls
+    document.getElementById('prevPage').addEventListener('click', function() {
+      if (currentPage > 1) {
+        currentPage--;
+        renderPage(currentPage, loadingTask.promise);
+      }
+    });
+  
+    document.getElementById('nextPage').addEventListener('click', function() {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderPage(currentPage, loadingTask.promise);
+      }
+    });
+  
+    document.getElementById('zoomIn').addEventListener('click', function() {
+      scale += 0.25;
+      renderPage(currentPage, loadingTask.promise);
+    });
+  
+    document.getElementById('zoomOut').addEventListener('click', function() {
+      if (scale > 0.5) {
+        scale -= 0.25;
+        renderPage(currentPage, loadingTask.promise);
+      }
+    });
+  }
+  
+  function initializeImageViewer() {
+    // Image viewer is already set up in the template
+    const imageView = document.getElementById('imageView');
+    imageView.onload = function() {
+      updateStatus('Image loaded successfully');
+    };
+    imageView.onerror = function() {
+      updateStatus('Error loading image');
+    };
+  }
+  
+  function initializeTextViewer() {
+    // Basic text viewer with syntax highlighting
+    const textContent = document.getElementById('textContent');
+    textContent.className = `language-${config.language}`;
+    // You could add Prism.js here for syntax highlighting
+  }
+  
+  function setupEventListeners() {
+    // Save button
+    document.getElementById('saveBtn')?.addEventListener('click', saveFile);
+  
+    // Reset button
+    document.getElementById('resetBtn')?.addEventListener('click', resetFile);
+  
+    // File info modal
+    const fileInfoModal = document.getElementById('fileInfoModal');
+    if (fileInfoModal) {
+      fileInfoModal.addEventListener('show.bs.modal', loadFileInfo);
+    }
+  
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveFile();
+      }
+    });
+  }
+  
+  function saveFile() {
+    if (!editor || !isModified) return;
+  
+    const content = editor.getValue();
+    const saveBtn = document.getElementById('saveBtn');
+    const originalText = saveBtn.innerHTML;
+  
+    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+    saveBtn.disabled = true;
+  
+    fetch(`/supervisor/files/${config.fileId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        isModified = false;
+        saveBtn.disabled = true;
+        updateStatus('Changes saved successfully at ' + new Date().toLocaleTimeString());
+        
+        // Show success message
+        showToast('Success', 'File saved successfully', 'success');
+      } else {
+        throw new Error(data.error || 'Failed to save file');
+      }
+    })
+    .catch(error => {
+      console.error('Save error:', error);
+      updateStatus('Error saving file: ' + error.message);
+      showToast('Error', 'Failed to save file: ' + error.message, 'danger');
+    })
+    .finally(() => {
+      saveBtn.innerHTML = originalText;
+    });
+  }
+  
+  function resetFile() {
+    if (editor && confirm('Are you sure you want to reset all changes?')) {
+      editor.setValue(config.initialContent);
+      isModified = false;
+      document.getElementById('saveBtn').disabled = true;
+      updateStatus('Changes reset');
+    }
+  }
+  
+  function updateLineInfo(line, column) {
+    document.getElementById('lineInfo').textContent = `Line ${line}, Column ${column}`;
+  }
+  
+  function updateStatus(message) {
+    document.getElementById('statusMessage').textContent = message;
+  }
+  
+  function loadFileInfo() {
+    const fileInfoContent = document.getElementById('fileInfoContent');
+    
+    fetch(config.infoUrl)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const file = data.file;
+          fileInfoContent.innerHTML = `
+            <div class="row">
+              <div class="col-md-6">
+                <h6 class="fw-semibold text-muted mb-3">File Details</h6>
+                <div class="mb-2">
+                  <strong>File Name:</strong>
+                  <div class="text-muted">${file.fileName}</div>
+                </div>
+                <div class="mb-2">
+                  <strong>File Size:</strong>
+                  <div class="text-muted">${file.fileSize}</div>
+                </div>
+                <div class="mb-2">
+                  <strong>MIME Type:</strong>
+                  <div class="text-muted">${file.mimeType}</div>
+                </div>
+                <div class="mb-2">
+                  <strong>Editable:</strong>
+                  <div>
+                    <span class="badge ${file.isEditable ? 'bg-success' : 'bg-secondary'}">
+                      ${file.isEditable ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <h6 class="fw-semibold text-muted mb-3">Report Information</h6>
+                <div class="mb-2">
+                  <strong>Title:</strong>
+                  <div class="text-muted">${file.title}</div>
+                </div>
+                <div class="mb-2">
+                  <strong>Student:</strong>
+                  <div class="text-muted">${file.studentName}</div>
+                </div>
+                <div class="mb-2">
+                  <strong>Stage:</strong>
+                  <div>
+                    <span class="badge bg-info">${file.reportStage.replace('_', ' ').toUpperCase()}</span>
+                  </div>
+                </div>
+                <div class="mb-2">
+                  <strong>Submitted:</strong>
+                  <div class="text-muted">${new Date(file.submittedAt).toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          fileInfoContent.innerHTML = `
+            <div class="alert alert-danger">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              <strong>Error:</strong> ${data.error || 'Failed to load file information'}
+            </div>
+          `;
+        }
+      })
+      .catch(error => {
+        fileInfoContent.innerHTML = `
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Error:</strong> Failed to load file information
+          </div>
+        `;
+      });
+  }
+  
+  function showToast(title, message, type = 'info') {
+    // Simple toast implementation
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-bg-${type} border-0 show position-fixed top-0 end-0 m-3`;
+    toast.style.zIndex = '1060';
+    toast.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body">
+          <strong>${title}:</strong> ${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.remove();
+    }, 5000);
+  }
+  </script>

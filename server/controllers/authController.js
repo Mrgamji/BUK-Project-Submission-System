@@ -19,7 +19,7 @@ const postLogin = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = db.prepare('SELECT * FROM users WHERE email = ? AND is_active = 1').get(email);
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
     
     if (!user) {
       req.flash('error', 'Invalid email or password');
@@ -215,12 +215,21 @@ const postRegister = async (req, res) => {
   }
 };
 
-const logout = (req, res) => {
-  if (req.session.user) {
-    logActivity(req.session.user.id, 'Logout', 'user', req.session.user.id)
-      .catch(err => console.error('Logout activity log error:', err));
+const logout = async (req, res) => {
+  try {
+    if (req.session.user) {
+      await logActivity(
+        req.session.user.id,
+        'Logout',
+        'user',
+        req.session.user.id,
+        {} // metadata must be provided
+      );
+    }
+  } catch (err) {
+    console.error('Logout log error:', err);
   }
-  
+
   req.session.destroy((err) => {
     if (err) {
       console.error('Session destroy error:', err);
@@ -228,6 +237,7 @@ const logout = (req, res) => {
     res.redirect('/auth/login');
   });
 };
+
 
 module.exports = { 
   getLogin, 
