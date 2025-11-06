@@ -1,0 +1,203 @@
+<<<<<<< HEAD
+<% const title = 'HOD Dashboard'; %>
+
+<div class="row mb-4">
+  <div class="col-12">
+    <h2><i class="bi bi-speedometer2 me-2"></i>Head of Department Dashboard</h2>
+    <p class="text-muted">Oversee all activities in your department</p>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-3 mb-3">
+    <div class="card stat-card">
+      <div class="card-body">
+        <h3 class="card-title"><%= stats.totalStudents %></h3>
+        <p class="card-text">Total Students</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card stat-card">
+      <div class="card-body">
+        <h3 class="card-title"><%= stats.totalSupervisors %></h3>
+        <p class="card-text">Supervisors</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card stat-card">
+      <div class="card-body">
+        <h3 class="card-title"><%= stats.totalReports %></h3>
+        <p class="card-text">Total Reports</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card stat-card">
+      <div class="card-body">
+        <h3 class="card-title"><%= stats.approvedReports %></h3>
+        <p class="card-text">Approved Reports</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header bg-white">
+    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Recent Reports</h5>
+  </div>
+  <div class="card-body">
+    <% if (recentReports && recentReports.length > 0) { %>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Title</th>
+              <th>Stage</th>
+              <th>Status</th>
+              <th>Submitted</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% recentReports.forEach(report => { %>
+              <tr>
+                <td><%= report.student_name %></td>
+                <td><%= report.title %></td>
+                <td><span class="badge bg-info"><%= report.report_stage.replace('_', ' ').toUpperCase() %></span></td>
+                <td>
+                  <% if (report.status === 'pending') { %>
+                    <span class="badge bg-warning text-dark">Pending</span>
+                  <% } else if (report.status === 'approved') { %>
+                    <span class="badge bg-success">Approved</span>
+                  <% } else if (report.status === 'rejected') { %>
+                    <span class="badge bg-danger">Rejected</span>
+                  <% } else { %>
+                    <span class="badge bg-secondary">Feedback Given</span>
+                  <% } %>
+                </td>
+                <td><%= new Date(report.submitted_at).toLocaleDateString() %></td>
+                <td>
+                  <a href="/hod/report/<%= report.id %>" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i> View
+                  </a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <div class="text-center mt-3">
+        <a href="/hod/reports" class="btn btn-primary">View All Reports</a>
+      </div>
+    <% } else { %>
+      <p class="text-muted text-center py-4">No reports yet</p>
+    <% } %>
+  </div>
+</div>
+=======
+<%
+  const title = 'HOD Dashboard';
+  const body = `
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2><i class="bi bi-speedometer2 me-2"></i>Head of Department Dashboard</h2>
+        <p class="text-muted">Oversee all activities in your department</p>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+          <div class="card-body">
+            <h3 class="card-title">${stats.totalStudents}</h3>
+            <p class="card-text">Total Students</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+          <div class="card-body">
+            <h3 class="card-title">${stats.totalSupervisors}</h3>
+            <p class="card-text">Supervisors</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+          <div class="card-body">
+            <h3 class="card-title">${stats.totalReports}</h3>
+            <p class="card-text">Total Reports</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+          <div class="card-body">
+            <h3 class="card-title">${stats.approvedReports}</h3>
+            <p class="card-text">Approved Reports</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Recent Reports</h5>
+      </div>
+      <div class="card-body">
+        <% if (recentReports && recentReports.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Title</th>
+                  <th>Stage</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% recentReports.forEach(report => { %>
+                  <tr>
+                    <td><%= report.student.full_name %></td>
+                    <td><%= report.title %></td>
+                    <td><span class="badge bg-info"><%= report.report_stage.replace('_', ' ').toUpperCase() %></span></td>
+                    <td>
+                      <% if (report.status === 'pending') { %>
+                        <span class="badge bg-warning text-dark">Pending</span>
+                      <% } else if (report.status === 'approved') { %>
+                        <span class="badge bg-success">Approved</span>
+                      <% } else if (report.status === 'rejected') { %>
+                        <span class="badge bg-danger">Rejected</span>
+                      <% } else { %>
+                        <span class="badge bg-secondary">Feedback Given</span>
+                      <% } %>
+                    </td>
+                    <td><%= new Date(report.submitted_at).toLocaleDateString() %></td>
+                    <td>
+                      <a href="/hod/report/${report.id}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> View
+                      </a>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <div class="text-center mt-3">
+            <a href="/hod/reports" class="btn btn-primary">View All Reports</a>
+          </div>
+        <% } else { %>
+          <p class="text-muted text-center py-4">No reports yet</p>
+        <% } %>
+      </div>
+    </div>
+  `;
+%>
+<%- include('../layouts/main', { title, body, user }) %>
+>>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae

@@ -1,0 +1,115 @@
+<<<<<<< HEAD
+<div class="row mb-4">
+  <div class="col-12">
+    <h2><i class="bi bi-graph-up me-2"></i>Progress Overview</h2>
+    <p class="text-muted">All reports from students in your level</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <% if (reports && reports.length > 0) { %>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Supervisor</th>
+              <th>Title</th>
+              <th>Stage</th>
+              <th>Status</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% reports.forEach(report => { %>
+              <tr>
+                <td><%= report.student_name || '—' %></td>
+                <td><%= report.supervisor_name || '—' %></td>
+                <td><%= report.title || 'Untitled' %></td>
+                <td>
+                  <span class="badge bg-info">
+                    <%= (report.report_stage || 'progress_1').replace('_', ' ').toUpperCase() %>
+                  </span>
+                </td>
+                <td>
+                  <% if (report.status === 'pending') { %>
+                    <span class="badge bg-warning text-dark">Pending</span>
+                  <% } else if (report.status === 'approved') { %>
+                    <span class="badge bg-success">Approved</span>
+                  <% } else if (report.status === 'rejected') { %>
+                    <span class="badge bg-danger">Rejected</span>
+                  <% } else { %>
+                    <span class="badge bg-secondary">Feedback Given</span>
+                  <% } %>
+                </td>
+                <td><%= new Date(report.submitted_at).toLocaleDateString() %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <p class="text-muted text-center py-4">No reports submitted yet.</p>
+    <% } %>
+  </div>
+</div>
+=======
+<%
+  const title = 'Progress Overview';
+  const body = `
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2><i class="bi bi-graph-up me-2"></i>Progress Overview</h2>
+        <p class="text-muted">All reports from students in your level</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <% if (reports && reports.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Supervisor</th>
+                  <th>Title</th>
+                  <th>Stage</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% reports.forEach(report => { %>
+                  <tr>
+                    <td><%= report.student.full_name %></td>
+                    <td><%= report.supervisor.full_name %></td>
+                    <td><%= report.title %></td>
+                    <td><span class="badge bg-info"><%= report.report_stage.replace('_', ' ').toUpperCase() %></span></td>
+                    <td>
+                      <% if (report.status === 'pending') { %>
+                        <span class="badge bg-warning text-dark">Pending</span>
+                      <% } else if (report.status === 'approved') { %>
+                        <span class="badge bg-success">Approved</span>
+                      <% } else if (report.status === 'rejected') { %>
+                        <span class="badge bg-danger">Rejected</span>
+                      <% } else { %>
+                        <span class="badge bg-secondary">Feedback Given</span>
+                      <% } %>
+                    </td>
+                    <td><%= new Date(report.submitted_at).toLocaleDateString() %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <p class="text-muted text-center py-4">No reports submitted yet</p>
+        <% } %>
+      </div>
+    </div>
+  `;
+%>
+<%- include('../layouts/main', { title, body, user }) %>
+>>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae

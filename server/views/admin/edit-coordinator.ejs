@@ -1,0 +1,130 @@
+<<<<<<< HEAD
+<div class="row">
+  <div class="col-md-8 mx-auto">
+    <div class="card">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">
+          <i class="bi bi-pencil me-2"></i>Edit Level Coordinator
+        </h5>
+      </div>
+
+      <div class="card-body">
+        <% if (error) { %>
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i><%= error %>
+          </div>
+        <% } %>
+
+        <form action="/admin/edit-coordinator/<%= coordinator.id %>" method="POST">
+          <div class="mb-3">
+            <label class="form-label">Full Name</label>
+            <input
+              type="text"
+              class="form-control"
+              name="full_name"
+              value="<%= coordinator.full_name %>"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Email Address</label>
+            <input
+              type="email"
+              class="form-control"
+              name="email"
+              value="<%= coordinator.email %>"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">New Password (leave blank to keep current)</label>
+            <input
+              type="password"
+              class="form-control"
+              name="password"
+              placeholder="Enter new password"
+            />
+            <small class="text-muted">Only enter a new password if you want to change it.</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Level</label>
+            <select class="form-select" name="level" required>
+              <option value="100" <%= coordinator.level === '100' ? 'selected' : '' %>>100 Level</option>
+              <option value="200" <%= coordinator.level === '200' ? 'selected' : '' %>>200 Level</option>
+              <option value="300" <%= coordinator.level === '300' ? 'selected' : '' %>>300 Level</option>
+              <option value="400" <%= coordinator.level === '400' ? 'selected' : '' %>>400 Level</option>
+            </select>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <a href="/admin/dashboard" class="btn btn-secondary">
+              <i class="bi bi-arrow-left me-1"></i>Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg me-1"></i>Update Coordinator
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+=======
+<%
+  const title = 'Edit Level Coordinator';
+  const body = `
+    <div class="row">
+      <div class="col-md-8 mx-auto">
+        <div class="card">
+          <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-pencil me-2"></i>Edit Level Coordinator</h5>
+          </div>
+          <div class="card-body">
+            ${error ? `
+              <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>${error}
+              </div>
+            ` : ''}
+            <form action="/admin/edit-coordinator/${coordinator.id}" method="POST">
+              <div class="mb-3">
+                <label class="form-label">Full Name</label>
+                <input type="text" class="form-control" name="full_name" value="${coordinator.full_name}" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Email Address</label>
+                <input type="email" class="form-control" name="email" value="${coordinator.email}" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">New Password (leave blank to keep current)</label>
+                <input type="password" class="form-control" name="password">
+                <small class="text-muted">Only enter a new password if you want to change it</small>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Level</label>
+                <select class="form-select" name="level" required>
+                  <option value="100" ${coordinator.level === '100' ? 'selected' : ''}>100 Level</option>
+                  <option value="200" ${coordinator.level === '200' ? 'selected' : ''}>200 Level</option>
+                  <option value="300" ${coordinator.level === '300' ? 'selected' : ''}>300 Level</option>
+                  <option value="400" ${coordinator.level === '400' ? 'selected' : ''}>400 Level</option>
+                </select>
+              </div>
+              <div class="d-flex justify-content-between">
+                <a href="/admin/dashboard" class="btn btn-secondary">
+                  <i class="bi bi-arrow-left me-1"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg me-1"></i>Update Coordinator
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+%>
+<%- include('../layouts/main', { title, body, user }) %>
+>>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae

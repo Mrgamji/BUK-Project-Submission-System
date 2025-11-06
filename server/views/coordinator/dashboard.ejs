@@ -1,0 +1,218 @@
+<<<<<<< HEAD
+<div class="row mb-4">
+  <div class="col-12">
+    <h2><i class="bi bi-speedometer2 me-2"></i>Level Coordinator Dashboard</h2>
+    <p class="text-muted">Manage <%= level %> Level students and supervisor assignments</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header bg-white">
+    <h5 class="mb-0"><i class="bi bi-people me-2"></i>Student-Supervisor Assignments</h5>
+  </div>
+  <div class="card-body">
+    <% if (students && students.length > 0) { %>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>Email</th>
+              <th>Department</th>
+              <th>Assigned Supervisor</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% students.forEach(student => { %>
+              <tr>
+                <td><%= student.full_name %></td>
+                <td><%= student.email %></td>
+                <td><%= student.department || '-' %></td>
+                <td>
+                  <% if (student.supervisor) { %>
+                    <span class="badge bg-success">
+                      <i class="bi bi-person-check me-1"></i><%= student.supervisor.full_name %>
+                    </span>
+                  <% } else { %>
+                    <span class="badge bg-warning text-dark">Not Assigned</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (student.supervisor) { %>
+                    <form action="/coordinator/unassign-student/<%= student.assignmentId %>" method="POST" style="display:inline;">
+                      <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Unassign this student?')">
+                        <i class="bi bi-x-circle"></i> Unassign
+                      </button>
+                    </form>
+                  <% } %>
+
+                  <!-- Only one modal; open it dynamically -->
+                  <button 
+                    class="btn btn-sm btn-outline-primary assign-btn"
+                    data-bs-toggle="modal"
+                    data-bs-target="#assignModal"
+                    data-student-id="<%= student.id %>"
+                    data-student-name="<%= student.full_name %>">
+                    <i class="bi bi-person-plus"></i>
+                    <%= student.supervisor ? 'Reassign' : 'Assign' %>
+                  </button>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <p class="text-muted text-center py-4">No students in this level yet</p>
+    <% } %>
+  </div>
+</div>
+
+<!-- ✅ Single Modal (outside the loop) -->
+<div class="modal fade" id="assignModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="/coordinator/assign-student" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">Assign Supervisor</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="studentId" id="studentIdField">
+          <div class="mb-3">
+            <label class="form-label">Student</label>
+            <input type="text" id="studentNameField" class="form-control" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Select Supervisor</label>
+            <select class="form-select" name="supervisorId" required>
+              <option value="">Choose a supervisor...</option>
+              <% supervisors.forEach(supervisor => { %>
+                <option value="<%= supervisor.id %>"><%= supervisor.full_name %></option>
+              <% }); %>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Assign</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Add this script -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('assignModal');
+    modal.addEventListener('show.bs.modal', event => {
+      const button = event.relatedTarget;
+      const studentId = button.getAttribute('data-student-id');
+      const studentName = button.getAttribute('data-student-name');
+
+      document.getElementById('studentIdField').value = studentId;
+      document.getElementById('studentNameField').value = studentName;
+      modal.querySelector('.modal-title').textContent = `Assign Supervisor to ${studentName}`;
+    });
+  });
+</script>
+=======
+<%
+  const title = 'Level Coordinator Dashboard';
+  const body = `
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2><i class="bi bi-speedometer2 me-2"></i>Level Coordinator Dashboard</h2>
+        <p class="text-muted">Manage ${level} Level students and supervisor assignments</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-people me-2"></i>Student-Supervisor Assignments</h5>
+      </div>
+      <div class="card-body">
+        <% if (students && students.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Email</th>
+                  <th>Department</th>
+                  <th>Assigned Supervisor</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% students.forEach(student => { %>
+                  <tr>
+                    <td><%= student.full_name %></td>
+                    <td><%= student.email %></td>
+                    <td><%= student.department %></td>
+                    <td>
+                      <% if (student.supervisor) { %>
+                        <span class="badge bg-success">
+                          <i class="bi bi-person-check me-1"></i><%= student.supervisor.full_name %>
+                        </span>
+                      <% } else { %>
+                        <span class="badge bg-warning text-dark">Not Assigned</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (student.supervisor) { %>
+                        <form action="/coordinator/unassign-student/${student.assignmentId}" method="POST" style="display: inline;">
+                          <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Unassign this student?')">
+                            <i class="bi bi-x-circle"></i> Unassign
+                          </button>
+                        </form>
+                      <% } %>
+                      <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assignModal${student.id}">
+                        <i class="bi bi-person-plus"></i> ${student.supervisor ? 'Reassign' : 'Assign'}
+                      </button>
+                    </td>
+                  </tr>
+
+                  <div class="modal fade" id="assignModal${student.id}" tabindex="-1">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title">Assign Supervisor to ${student.full_name}</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form action="/coordinator/assign-student" method="POST">
+                          <div class="modal-body">
+                            <input type="hidden" name="studentId" value="${student.id}">
+                            <div class="mb-3">
+                              <label class="form-label">Select Supervisor</label>
+                              <select class="form-select" name="supervisorId" required>
+                                <option value="">Choose a supervisor...</option>
+                                <% supervisors.forEach(supervisor => { %>
+                                  <option value="<%= supervisor.id %>"><%= supervisor.full_name %></option>
+                                <% }); %>
+                              </select>
+                            </div>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Assign</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <p class="text-muted text-center py-4">No students in this level yet</p>
+        <% } %>
+      </div>
+    </div>
+  `;
+%>
+<%- include('../layouts/main', { title, body, user }) %>
+>>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae

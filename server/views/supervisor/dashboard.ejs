@@ -1,0 +1,491 @@
+<<<<<<< HEAD
+<div class="container-fluid">
+  <!-- Header Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="h3 fw-bold text-dark mb-2">
+            <i class="bi bi-speedometer2 me-2 text-primary"></i>Supervisor Dashboard
+          </h1>
+          <p class="text-muted mb-0">Manage your assigned students and their research reports</p>
+        </div>
+        <div class="text-end">
+          <span class="badge bg-light text-dark border">
+            <i class="bi bi-person-check me-1"></i>
+            <%= stats ? stats.totalStudents : 0 %> Students
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card stat-card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <h3 class="card-title fw-bold text-dark mb-1"><%= stats ? stats.totalStudents : 0 %></h3>
+              <p class="card-text text-muted mb-0">Assigned Students</p>
+            </div>
+            <div class="flex-shrink-0">
+              <div class="bg-primary bg-opacity-10 p-3 rounded">
+                <i class="bi bi-people-fill text-primary fs-4"></i>
+              </div>
+            </div>
+=======
+<%
+  const title = 'Supervisor Dashboard';
+  const body = `
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2><i class="bi bi-speedometer2 me-2"></i>Supervisor Dashboard</h2>
+        <p class="text-muted">Manage your assigned students and their reports</p>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-6 mb-3">
+        <div class="card stat-card">
+          <div class="card-body">
+            <h3 class="card-title">${students ? students.length : 0}</h3>
+            <p class="card-text">Assigned Students</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <div class="card stat-card">
+          <div class="card-body">
+            <h3 class="card-title">${recentReports ? recentReports.filter(r => r.status === 'pending').length : 0}</h3>
+            <p class="card-text">Pending Reports</p>
+>>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae
+          </div>
+        </div>
+      </div>
+    </div>
+<<<<<<< HEAD
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card stat-card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <h3 class="card-title fw-bold text-dark mb-1"><%= stats ? stats.totalReports : 0 %></h3>
+              <p class="card-text text-muted mb-0">Total Reports</p>
+            </div>
+            <div class="flex-shrink-0">
+              <div class="bg-info bg-opacity-10 p-3 rounded">
+                <i class="bi bi-file-earmark-text text-info fs-4"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card stat-card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <h3 class="card-title fw-bold text-dark mb-1"><%= stats ? stats.pendingReports : 0 %></h3>
+              <p class="card-text text-muted mb-0">Pending Review</p>
+            </div>
+            <div class="flex-shrink-0">
+              <div class="bg-warning bg-opacity-10 p-3 rounded">
+                <i class="bi bi-clock-history text-warning fs-4"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card stat-card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <h3 class="card-title fw-bold text-dark mb-1"><%= stats ? stats.approvedReports : 0 %></h3>
+              <p class="card-text text-muted mb-0">Approved Reports</p>
+            </div>
+            <div class="flex-shrink-0">
+              <div class="bg-success bg-opacity-10 p-3 rounded">
+                <i class="bi bi-check-circle text-success fs-4"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Students Section -->
+    <div class="col-lg-6 mb-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-people me-2 text-primary"></i>My Students
+            <span class="badge bg-primary ms-2"><%= students ? students.length : 0 %></span>
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if (students && students.length > 0) { %>
+            <div class="list-group list-group-flush">
+              <% students.forEach(student => { %>
+                <div class="list-group-item border-0 px-0 py-3">
+                  <div class="d-flex align-items-start">
+                    <div class="flex-grow-1">
+                      <h6 class="mb-1 fw-semibold">
+                        <i class="bi bi-person-circle me-2 text-muted"></i>
+                        <%= student.full_name %>
+                      </h6>
+                      <p class="text-muted small mb-2">
+                        <i class="bi bi-envelope me-1"></i><%= student.email %>
+                        <% if (student.registration_number && student.registration_number !== 'N/A') { %>
+                          <br><i class="bi bi-tag me-1"></i><%= student.registration_number %>
+                        <% } %>
+                      </p>
+                      <div class="d-flex gap-2 mb-2">
+                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                          <%= student.level %> Level
+                        </span>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">
+                          <%= student.department %>
+                        </span>
+                      </div>
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div class="small text-muted">
+                          <span class="me-3">
+                            <i class="bi bi-file-text me-1"></i><%= student.reportsCount %> reports
+                          </span>
+                          <% if (student.pendingCount > 0) { %>
+                            <span class="text-warning">
+                              <i class="bi bi-clock me-1"></i><%= student.pendingCount %> pending
+                            </span>
+                          <% } %>
+                        </div>
+                        <a href="/supervisor/student/<%= student.id %>" class="btn btn-sm btn-outline-primary">
+                          View <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="text-center py-5">
+              <i class="bi bi-people display-4 text-muted opacity-25 mb-3"></i>
+              <p class="text-muted">No students assigned yet</p>
+              <small class="text-muted">Students will appear here once they are assigned to you.</small>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Reports Section -->
+    <div class="col-lg-6 mb-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-clock-history me-2 text-primary"></i>Recent Reports
+            <span class="badge bg-primary ms-2"><%= recentReports ? recentReports.length : 0 %></span>
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if (recentReports && recentReports.length > 0) { %>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th class="border-0">Student</th>
+                    <th class="border-0">Title</th>
+                    <th class="border-0">Stage</th>
+                    <th class="border-0">Status</th>
+                    <th class="border-0">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% recentReports.forEach(report => { %>
+                    <tr>
+                      <td>
+                        <div class="fw-semibold"><%= report.student_name %></div>
+                        <small class="text-muted"><%= new Date(report.submitted_at).toLocaleDateString() %></small>
+                      </td>
+                      <td>
+                        <div class="text-truncate" style="max-width: 150px;" title="<%= report.title %>">
+                          <%= report.title %>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                          <%= report.report_stage.replace('_', ' ').toUpperCase() %>
+                        </span>
+                      </td>
+                      <td>
+                        <% if (report.status === 'pending') { %>
+                          <span class="badge bg-warning text-dark">
+                            <i class="bi bi-clock me-1"></i>Pending
+                          </span>
+                        <% } else if (report.status === 'approved') { %>
+                          <span class="badge bg-success">
+                            <i class="bi bi-check-circle me-1"></i>Approved
+                          </span>
+                        <% } else if (report.status === 'rejected') { %>
+                          <span class="badge bg-danger">
+                            <i class="bi bi-x-circle me-1"></i>Rejected
+                          </span>
+                        <% } else { %>
+                          <span class="badge bg-secondary">
+                            <i class="bi bi-chat-text me-1"></i>Feedback Given
+                          </span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <a href="/supervisor/report/<%= report.id %>" class="btn btn-sm btn-outline-primary">
+                          <i class="bi bi-eye me-1"></i>Review
+                        </a>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+            <div class="text-center mt-3">
+              <a href="#" class="btn btn-sm btn-outline-secondary">
+                View All Reports <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+          <% } else { %>
+            <div class="text-center py-5">
+              <i class="bi bi-file-earmark-text display-4 text-muted opacity-25 mb-3"></i>
+              <p class="text-muted">No reports submitted yet</p>
+              <small class="text-muted">Reports from your students will appear here for review.</small>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions Section -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-lightning me-2 text-primary"></i>Quick Actions
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3 col-6">
+              <a href="/supervisor/dashboard" class="btn btn-outline-primary w-100 h-100 py-3">
+                <i class="bi bi-house-door fs-4 d-block mb-2"></i>
+                <span>Dashboard</span>
+              </a>
+            </div>
+            <div class="col-md-3 col-6">
+              <a href="#" class="btn btn-outline-info w-100 h-100 py-3">
+                <i class="bi bi-person-lines-fill fs-4 d-block mb-2"></i>
+                <span>My Profile</span>
+              </a>
+            </div>
+            <div class="col-md-3 col-6">
+              <a href="#" class="btn btn-outline-success w-100 h-100 py-3">
+                <i class="bi bi-chat-left-text fs-4 d-block mb-2"></i>
+                <span>Feedback</span>
+              </a>
+            </div>
+            <div class="col-md-3 col-6">
+              <a href="/auth/logout" class="btn btn-outline-danger w-100 h-100 py-3">
+                <i class="bi bi-box-arrow-right fs-4 d-block mb-2"></i>
+                <span>Logout</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.stat-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.btn-outline-primary, .btn-outline-info, .btn-outline-success, .btn-outline-danger {
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-outline-primary:hover, .btn-outline-info:hover, .btn-outline-success:hover, .btn-outline-danger:hover {
+  transform: translateY(-1px);
+}
+
+.list-group-item {
+  transition: background-color 0.2s ease-in-out;
+}
+
+.list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+.table tbody tr {
+  transition: background-color 0.2s ease-in-out;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.badge {
+  font-weight: 500;
+}
+
+.card {
+  border: 1px solid rgba(0,0,0,0.125);
+}
+</style>
+
+<script>
+// Add some interactive features
+document.addEventListener('DOMContentLoaded', function() {
+  // Add loading states to buttons
+  const buttons = document.querySelectorAll('a.btn, button.btn');
+  buttons.forEach(button => {
+    button.addEventListener('click', function(e) {
+      if (this.getAttribute('href') !== '#' && !this.classList.contains('disabled')) {
+        const originalText = this.innerHTML;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
+        this.classList.add('disabled');
+        
+        setTimeout(() => {
+          this.innerHTML = originalText;
+          this.classList.remove('disabled');
+        }, 2000);
+      }
+    });
+  });
+
+  // Auto-refresh dashboard every 5 minutes
+  setInterval(() => {
+    console.log('Auto-refreshing dashboard...');
+    // You can implement actual refresh logic here
+  }, 300000);
+
+  // Add tooltips
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+  tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+});
+</script>
+=======
+
+    <div class="card mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-people me-2"></i>My Students</h5>
+      </div>
+      <div class="card-body">
+        <% if (students && students.length > 0) { %>
+          <div class="row">
+            <% students.forEach(student => { %>
+              <div class="col-md-6 mb-3">
+                <div class="card">
+                  <div class="card-body">
+                    <h6 class="card-title">${student.full_name}</h6>
+                    <p class="card-text mb-2">
+                      <small class="text-muted">${student.email}</small><br>
+                      <span class="badge bg-info">${student.level} Level</span>
+                      <span class="badge bg-secondary">${student.department}</span>
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <small>
+                          <i class="bi bi-file-earmark-text me-1"></i>${student.reportsCount} Reports
+                          <span class="text-warning ms-2">
+                            <i class="bi bi-clock me-1"></i>${student.pendingCount} Pending
+                          </span>
+                        </small>
+                      </div>
+                      <a href="/supervisor/student/${student.id}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-eye"></i> View
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <p class="text-muted text-center py-4">No students assigned yet</p>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Reports</h5>
+      </div>
+      <div class="card-body">
+        <% if (recentReports && recentReports.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Title</th>
+                  <th>Stage</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% recentReports.forEach(report => { %>
+                  <tr>
+                    <td>${report.student.full_name}</td>
+                    <td>${report.title}</td>
+                    <td><span class="badge bg-info">${report.report_stage.replace('_', ' ').toUpperCase()}</span></td>
+                    <td>
+                      <% if (report.status === 'pending') { %>
+                        <span class="badge bg-warning text-dark">Pending</span>
+                      <% } else if (report.status === 'approved') { %>
+                        <span class="badge bg-success">Approved</span>
+                      <% } else if (report.status === 'rejected') { %>
+                        <span class="badge bg-danger">Rejected</span>
+                      <% } else { %>
+                        <span class="badge bg-secondary">Feedback Given</span>
+                      <% } %>
+                    </td>
+                    <td>${new Date(report.submitted_at).toLocaleDateString()}</td>
+                    <td>
+                      <a href="/supervisor/report/${report.id}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> Review
+                      </a>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <p class="text-muted text-center py-4">No reports yet</p>
+        <% } %>
+      </div>
+    </div>
+  `;
+%>
+<%- include('../layouts/main', { title, body, user }) %>
+>>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae

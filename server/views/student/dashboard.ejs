@@ -1,0 +1,306 @@
+<<<<<<< HEAD
+<div class="row mb-4">
+  <div class="col-12">
+    <h2><i class="bi bi-speedometer2 me-2"></i>Student Dashboard</h2>
+    <p class="text-muted">Track your project submissions and feedback</p>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <% if (supervisor) { %>
+    <div class="col-12">
+      <div class="alert alert-info">
+        <h5 class="alert-heading">
+          <i class="bi bi-person-check me-2"></i>Your Supervisor
+        </h5>
+        <p class="mb-0">
+          <strong><%= supervisor.full_name %></strong><br>
+          <small><%= supervisor.email %></small>
+        </p>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="col-12">
+      <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        You have not been assigned a supervisor yet. Please wait for your level coordinator to assign one.
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>My Reports</h5>
+    <a href="/student/upload-report" class="btn btn-primary btn-sm">
+      <i class="bi bi-cloud-upload me-1"></i>Upload New Report
+    </a>
+  </div>
+  <div class="card-body">
+    <% if (reports && reports.length > 0) { %>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Stage</th>
+              <th>Version</th>
+              <th>Status</th>
+              <th>Submitted</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% reports.forEach(report => { %>
+              <tr>
+                <td><%= report.title %></td>
+                <td><span class="badge bg-info"><%= report.report_stage.replace('_', ' ').toUpperCase() %></span></td>
+                <td>v<%= report.version %></td>
+                <td>
+                  <% if (report.status === 'pending') { %>
+                    <span class="badge bg-warning text-dark">Pending Review</span>
+                  <% } else if (report.status === 'approved') { %>
+                    <span class="badge bg-success">Approved</span>
+                  <% } else if (report.status === 'rejected') { %>
+                    <span class="badge bg-danger">Rejected</span>
+                  <% } else { %>
+                    <span class="badge bg-secondary">Feedback Given</span>
+                  <% } %>
+                </td>
+                <td><%= new Date(report.submitted_at).toLocaleDateString() %></td>
+                <td>
+                  <a href="/student/report/<%= report.id %>" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i> View
+                  </a>
+                  <% if (report.status === 'feedback_given' || report.status === 'rejected') { %>
+                    <a href="/student/reupload/<%= report.id %>" class="btn btn-sm btn-outline-warning">
+                      <i class="bi bi-arrow-repeat"></i> Reupload
+                    </a>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <p class="text-muted text-center py-4">
+        No reports submitted yet.
+        <a href="/student/upload-report">Upload your first report</a>
+      </p>
+    <% } %>
+  </div>
+</div>
+
+<div class="row">
+  <% const stages = ['progress_1', 'progress_2', 'progress_3', 'final']; %>
+  <% stages.forEach(stage => { %>
+    <div class="col-md-6 mb-3">
+      <div class="card">
+        <div class="card-header bg-white">
+          <h6 class="mb-0"><%= stage.replace('_', ' ').toUpperCase() %> Report</h6>
+        </div>
+        <div class="card-body">
+          <% if (reportsByStage[stage] && reportsByStage[stage].length > 0) { %>
+            <p class="mb-2">
+              <span class="badge bg-success">Submitted</span>
+              <span class="badge bg-secondary"><%= reportsByStage[stage][0].status %></span>
+            </p>
+            <a href="/student/report/<%= reportsByStage[stage][0].id %>" class="btn btn-sm btn-outline-primary">
+              View Details
+            </a>
+          <% } else { %>
+            <p class="text-muted mb-2">Not submitted</p>
+            <% if (stage === 'progress_1' || stage === 'progress_2' || stage === 'progress_3' || stage === 'final') { %>
+              <a href="/student/upload-report" class="btn btn-sm btn-primary">Upload</a>
+            <% } %>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  <% }) %>
+</div>
+=======
+<%
+  const title = 'Student Dashboard';
+  const body = `
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2><i class="bi bi-speedometer2 me-2"></i>Student Dashboard</h2>
+        <p class="text-muted">Track your project submissions and feedback</p>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <% if (supervisor) { %>
+        <div class="col-12">
+          <div class="alert alert-info">
+            <h5 class="alert-heading">
+              <i class="bi bi-person-check me-2"></i>Your Supervisor
+            </h5>
+            <p class="mb-0">
+              <strong>${supervisor.full_name}</strong><br>
+              <small>${supervisor.email}</small>
+            </p>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="col-12">
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            You have not been assigned a supervisor yet. Please wait for your level coordinator to assign one.
+          </div>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>My Reports</h5>
+        <a href="/student/upload-report" class="btn btn-primary btn-sm">
+          <i class="bi bi-cloud-upload me-1"></i>Upload New Report
+        </a>
+      </div>
+      <div class="card-body">
+        <% if (reports && reports.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Stage</th>
+                  <th>Version</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% reports.forEach(report => { %>
+                  <tr>
+                    <td>${report.title}</td>
+                    <td><span class="badge bg-info">${report.report_stage.replace('_', ' ').toUpperCase()}</span></td>
+                    <td>v${report.version}</td>
+                    <td>
+                      <% if (report.status === 'pending') { %>
+                        <span class="badge bg-warning text-dark">Pending Review</span>
+                      <% } else if (report.status === 'approved') { %>
+                        <span class="badge bg-success">Approved</span>
+                      <% } else if (report.status === 'rejected') { %>
+                        <span class="badge bg-danger">Rejected</span>
+                      <% } else { %>
+                        <span class="badge bg-secondary">Feedback Given</span>
+                      <% } %>
+                    </td>
+                    <td>${new Date(report.submitted_at).toLocaleDateString()}</td>
+                    <td>
+                      <a href="/student/report/${report.id}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> View
+                      </a>
+                      <% if (report.status === 'feedback_given' || report.status === 'rejected') { %>
+                        <a href="/student/reupload/${report.id}" class="btn btn-sm btn-outline-warning">
+                          <i class="bi bi-arrow-repeat"></i> Reupload
+                        </a>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <p class="text-muted text-center py-4">
+            No reports submitted yet.
+            <a href="/student/upload-report">Upload your first report</a>
+          </p>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <div class="card">
+          <div class="card-header bg-white">
+            <h6 class="mb-0">Progress Report 1</h6>
+          </div>
+          <div class="card-body">
+            <% if (reportsByStage.progress_1.length > 0) { %>
+              <p class="mb-2">
+                <span class="badge bg-success">Submitted</span>
+                <span class="badge bg-secondary">${reportsByStage.progress_1[0].status}</span>
+              </p>
+              <a href="/student/report/${reportsByStage.progress_1[0].id}" class="btn btn-sm btn-outline-primary">
+                View Details
+              </a>
+            <% } else { %>
+              <p class="text-muted mb-2">Not submitted</p>
+              <a href="/student/upload-report" class="btn btn-sm btn-primary">Upload</a>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <div class="card">
+          <div class="card-header bg-white">
+            <h6 class="mb-0">Progress Report 2</h6>
+          </div>
+          <div class="card-body">
+            <% if (reportsByStage.progress_2.length > 0) { %>
+              <p class="mb-2">
+                <span class="badge bg-success">Submitted</span>
+                <span class="badge bg-secondary">${reportsByStage.progress_2[0].status}</span>
+              </p>
+              <a href="/student/report/${reportsByStage.progress_2[0].id}" class="btn btn-sm btn-outline-primary">
+                View Details
+              </a>
+            <% } else { %>
+              <p class="text-muted mb-2">Not submitted</p>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <div class="card">
+          <div class="card-header bg-white">
+            <h6 class="mb-0">Progress Report 3</h6>
+          </div>
+          <div class="card-body">
+            <% if (reportsByStage.progress_3.length > 0) { %>
+              <p class="mb-2">
+                <span class="badge bg-success">Submitted</span>
+                <span class="badge bg-secondary">${reportsByStage.progress_3[0].status}</span>
+              </p>
+              <a href="/student/report/${reportsByStage.progress_3[0].id}" class="btn btn-sm btn-outline-primary">
+                View Details
+              </a>
+            <% } else { %>
+              <p class="text-muted mb-2">Not submitted</p>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <div class="card">
+          <div class="card-header bg-white">
+            <h6 class="mb-0">Final Report</h6>
+          </div>
+          <div class="card-body">
+            <% if (reportsByStage.final.length > 0) { %>
+              <p class="mb-2">
+                <span class="badge bg-success">Submitted</span>
+                <span class="badge bg-secondary">${reportsByStage.final[0].status}</span>
+              </p>
+              <a href="/student/report/${reportsByStage.final[0].id}" class="btn btn-sm btn-outline-primary">
+                View Details
+              </a>
+            <% } else { %>
+              <p class="text-muted mb-2">Not submitted</p>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+%>
+<%- include('../layouts/main', { title, body, user }) %>
+>>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae

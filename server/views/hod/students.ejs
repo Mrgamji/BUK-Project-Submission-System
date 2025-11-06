@@ -1,0 +1,311 @@
+<<<<<<< HEAD
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="h3 fw-bold text-dark mb-2">
+            <i class="bi bi-people me-2 text-primary"></i>Department Students
+          </h2>
+          <p class="text-muted mb-0">All students in your department</p>
+        </div>
+        <div class="text-end">
+          <span class="badge bg-light text-dark border">
+            <i class="bi bi-person me-1"></i>
+            <%= students ? students.length : 0 %> Students
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0">
+      <h5 class="mb-0 fw-semibold">
+        <i class="bi bi-list-ul me-2 text-primary"></i>Students List
+        <span class="badge bg-primary ms-2"><%= students ? students.length : 0 %></span>
+      </h5>
+    </div>
+    <div class="card-body">
+      <% if (students && students.length > 0) { %>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Student Information</th>
+                <th>Level</th>
+                <th>Supervisor</th>
+                <th>Contact</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% students.forEach(student => { %>
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="flex-shrink-0">
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                          <i class="bi bi-person-fill text-primary"></i>
+                        </div>
+                      </div>
+                      <div class="flex-grow-1">
+                        <h6 class="mb-1 fw-semibold"><%= student.full_name %></h6>
+                        <p class="text-muted mb-0 small">
+                          <i class="bi bi-envelope me-1"></i><%= student.email %>
+                        </p>
+                        <% if (student.registration_number && student.registration_number !== 'N/A') { %>
+                          <p class="text-muted mb-0 small">
+                            <i class="bi bi-tag me-1"></i><%= student.registration_number %>
+                          </p>
+                        <% } %>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                      <%= student.level %> Level
+                    </span>
+                  </td>
+                  <td>
+                    <% if (student.supervisor) { %>
+                      <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                          <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                            <i class="bi bi-person-check text-success"></i>
+                          </div>
+                        </div>
+                        <div class="flex-grow-1">
+                          <h6 class="mb-1 fw-semibold"><%= student.supervisor.full_name %></h6>
+                          <p class="text-muted mb-0 small">
+                            <i class="bi bi-envelope me-1"></i><%= student.supervisor.email %>
+                          </p>
+                        </div>
+                      </div>
+                    <% } else { %>
+                      <div class="text-center">
+                        <i class="bi bi-person-x text-muted opacity-50 display-6"></i>
+                        <p class="text-muted small mb-0 mt-2">Not Assigned</p>
+                        <button class="btn btn-sm btn-outline-primary mt-2">
+                          <i class="bi bi-plus-circle me-1"></i>Assign
+                        </button>
+                      </div>
+                    <% } %>
+                  </td>
+                  <td>
+                    <div class="btn-group-vertical btn-group-sm">
+                      <a href="mailto:<%= student.email %>" class="btn btn-outline-primary">
+                        <i class="bi bi-envelope me-1"></i>Email
+                      </a>
+                      <% if (student.phone) { %>
+                        <a href="tel:<%= student.phone %>" class="btn btn-outline-success mt-1">
+                          <i class="bi bi-telephone me-1"></i>Call
+                        </a>
+                      <% } %>
+                    </div>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Statistics Summary -->
+        <div class="row mt-4">
+          <div class="col-12">
+            <div class="card bg-light border-0">
+              <div class="card-body py-3">
+                <div class="row text-center">
+                  <div class="col-md-3">
+                    <small class="text-muted">Total Students: 
+                      <span class="fw-semibold text-primary"><%= students.length %></span>
+                    </small>
+                  </div>
+                  <div class="col-md-3">
+                    <small class="text-muted">With Supervisor: 
+                      <span class="fw-semibold text-success">
+                        <%= students.filter(s => s.supervisor).length %>
+                      </span>
+                    </small>
+                  </div>
+                  <div class="col-md-3">
+                    <small class="text-muted">Without Supervisor: 
+                      <span class="fw-semibold text-warning">
+                        <%= students.filter(s => !s.supervisor).length %>
+                      </span>
+                    </small>
+                  </div>
+                  <div class="col-md-3">
+                    <small class="text-muted">400 Level: 
+                      <span class="fw-semibold text-info">
+                        <%= students.filter(s => s.level === '400').length %>
+                      </span>
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      <% } else { %>
+        <div class="text-center py-5">
+          <i class="bi bi-people display-4 text-muted opacity-25 mb-3"></i>
+          <p class="text-muted">No students in your department</p>
+          <small class="text-muted">
+            Students will appear here once they register and select your department.
+          </small>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-white border-0">
+      <h5 class="mb-0 fw-semibold">
+        <i class="bi bi-lightning me-2 text-primary"></i>Quick Actions
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <a href="/hod/dashboard" class="btn btn-outline-primary w-100 h-100 py-3">
+            <i class="bi bi-speedometer2 fs-4 d-block mb-2"></i>
+            <span>HOD Dashboard</span>
+          </a>
+        </div>
+        <div class="col-md-4">
+          <a href="/hod/reports" class="btn btn-outline-info w-100 h-100 py-3">
+            <i class="bi bi-file-earmark-text fs-4 d-block mb-2"></i>
+            <span>View Reports</span>
+          </a>
+        </div>
+        <div class="col-md-4">
+          <a href="#" class="btn btn-outline-success w-100 h-100 py-3">
+            <i class="bi bi-person-plus fs-4 d-block mb-2"></i>
+            <span>Manage Supervisors</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  border: 1px solid rgba(0,0,0,0.125);
+}
+.table tbody tr {
+  transition: background-color 0.2s ease-in-out;
+}
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+.bg-opacity-10 {
+  background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Add interactivity to assign supervisor buttons
+  const assignButtons = document.querySelectorAll('.btn-outline-primary');
+  assignButtons.forEach(button => {
+    button.addEventListener('click', function(e) {
+      if (this.textContent.includes('Assign')) {
+        e.preventDefault();
+        const studentName = this.closest('tr').querySelector('.fw-semibold').textContent;
+        if (confirm(`Assign supervisor to ${studentName}?`)) {
+          // Here you would typically open a modal or redirect to assignment page
+          alert('Supervisor assignment feature would open here. This is a demo.');
+        }
+      }
+    });
+  });
+
+  // Add search functionality (optional enhancement)
+  const addSearchFunctionality = () => {
+    const table = document.querySelector('table');
+    const rows = table.querySelectorAll('tbody tr');
+    
+    // You could add a search input above the table
+    const searchHtml = `
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="bi bi-search"></i>
+            </span>
+            <input type="text" class="form-control" placeholder="Search students..." id="studentSearch">
+          </div>
+        </div>
+      </div>
+    `;
+    
+    table.insertAdjacentHTML('beforebegin', searchHtml);
+    
+    const searchInput = document.getElementById('studentSearch');
+    searchInput.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    });
+  };
+
+  // Uncomment the line below to enable search functionality
+  // addSearchFunctionality();
+});
+</script>
+=======
+<%
+  const title = 'Students - HOD';
+  const body = `
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2><i class="bi bi-people me-2"></i>Students</h2>
+        <p class="text-muted">All students in your department</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <% if (students && students.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Level</th>
+                  <th>Supervisor</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% students.forEach(student => { %>
+                  <tr>
+                    <td><%= student.full_name %></td>
+                    <td><%= student.email %></td>
+                    <td><span class="badge bg-info"><%= student.level %> Level</span></td>
+                    <td>
+                      <% if (student.supervisor) { %>
+                        <%= student.supervisor.full_name %>
+                      <% } else { %>
+                        <span class="text-muted">Not Assigned</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <p class="text-muted text-center py-4">No students in your department</p>
+        <% } %>
+      </div>
+    </div>
+  `;
+%>
+<%- include('../layouts/main', { title, body, user }) %>
+>>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae

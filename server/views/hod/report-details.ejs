@@ -1,0 +1,378 @@
+<<<<<<< HEAD
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col-12">
+      <a href="/hod/reports" class="btn btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left me-1"></i>Back to Reports
+      </a>
+      <h2><i class="bi bi-file-earmark-text me-2"></i><%= report.title %></h2>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card mb-3 border-0 shadow-sm">
+        <div class="card-header bg-white border-0">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-info-circle me-2 text-primary"></i>Report Information
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-4 text-muted"><strong>Student:</strong></div>
+            <div class="col-md-8 fw-semibold"><%= report.student_name %></div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4 text-muted"><strong>Email:</strong></div>
+            <div class="col-md-8"><%= report.student_email %></div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4 text-muted"><strong>Supervisor:</strong></div>
+            <div class="col-md-8 fw-semibold"><%= report.supervisor_name %></div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4 text-muted"><strong>Email:</strong></div>
+            <div class="col-md-8"><%= report.supervisor_email %></div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4 text-muted"><strong>Stage:</strong></div>
+            <div class="col-md-8">
+              <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                <%= report.report_stage.replace('_', ' ').toUpperCase() %>
+              </span>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4 text-muted"><strong>Status:</strong></div>
+            <div class="col-md-8">
+              <% if (report.status === 'pending') { %>
+                <span class="badge bg-warning text-dark">
+                  <i class="bi bi-clock me-1"></i>Pending
+                </span>
+              <% } else if (report.status === 'approved') { %>
+                <span class="badge bg-success">
+                  <i class="bi bi-check-circle me-1"></i>Approved
+                </span>
+              <% } else if (report.status === 'rejected') { %>
+                <span class="badge bg-danger">
+                  <i class="bi bi-x-circle me-1"></i>Rejected
+                </span>
+              <% } else { %>
+                <span class="badge bg-secondary">
+                  <i class="bi bi-chat-text me-1"></i>Feedback Given
+                </span>
+              <% } %>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4 text-muted"><strong>Version:</strong></div>
+            <div class="col-md-8">
+              <span class="badge bg-secondary">v<%= report.version %></span>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4 text-muted"><strong>File:</strong></div>
+            <div class="col-md-8">
+              <i class="bi bi-file-earmark me-1"></i><%= report.file_name %>
+              <% if (report.file_size) { %>
+                <small class="text-muted d-block">(<%= (report.file_size / 1024 / 1024).toFixed(2) %> MB)</small>
+              <% } %>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4 text-muted"><strong>Submitted:</strong></div>
+            <div class="col-md-8">
+              <i class="bi bi-calendar me-1"></i><%= new Date(report.submitted_at).toLocaleDateString() %>
+              <small class="text-muted d-block">
+                <i class="bi bi-clock me-1"></i><%= new Date(report.submitted_at).toLocaleTimeString() %>
+              </small>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12 mt-3">
+              <a href="<%= report.file_url %>" class="btn btn-primary" download target="_blank">
+                <i class="bi bi-download me-1"></i>Download Report
+              </a>
+              <a href="<%= report.file_url %>" class="btn btn-outline-primary ms-2" target="_blank">
+                <i class="bi bi-eye me-1"></i>View File
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <% if (feedback && feedback.length > 0) { %>
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white border-0">
+            <h5 class="mb-0 fw-semibold">
+              <i class="bi bi-chat-left-text me-2 text-primary"></i>Supervisor Feedback
+              <span class="badge bg-primary ms-2"><%= feedback.length %></span>
+            </h5>
+          </div>
+          <div class="card-body">
+            <% feedback.forEach(fb => { %>
+              <div class="mb-3 p-3 border-start border-4 border-primary bg-light rounded">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <strong class="text-primary"><%= fb.supervisor_name %></strong>
+                    <span class="badge bg-secondary ms-2">
+                      <%= fb.action_taken ? fb.action_taken.replace('_', ' ').toUpperCase() : 'COMMENTED' %>
+                    </span>
+                  </div>
+                  <small class="text-muted">
+                    <i class="bi bi-clock me-1"></i><%= new Date(fb.created_at).toLocaleString() %>
+                  </small>
+                </div>
+                <p class="mb-0 text-dark"><%= fb.comment %></p>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-4">
+            <i class="bi bi-chat-left-text display-4 text-muted opacity-25 mb-3"></i>
+            <p class="text-muted">No supervisor feedback yet</p>
+            <small class="text-muted">The supervisor hasn't provided feedback on this report.</small>
+          </div>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card mb-3 border-0 shadow-sm">
+        <div class="card-header bg-white border-0">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-pencil-square me-2 text-primary"></i>Provide HOD Feedback
+          </h5>
+        </div>
+        <div class="card-body">
+          <form action="/hod/feedback" method="POST">
+            <input type="hidden" name="reportId" value="<%= report.id %>">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Your Feedback</label>
+              <textarea class="form-control" name="comment" rows="6" placeholder="Provide high-level oversight feedback..." required></textarea>
+              <div class="form-text">Focus on overall quality, compliance, and departmental standards.</div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 py-2">
+              <i class="bi bi-send me-1"></i>Submit HOD Feedback
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <% if (hodFeedback && hodFeedback.length > 0) { %>
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white border-0">
+            <h5 class="mb-0 fw-semibold">
+              <i class="bi bi-chat-left-text me-2 text-success"></i>Previous HOD Feedback
+              <span class="badge bg-success ms-2"><%= hodFeedback.length %></span>
+            </h5>
+          </div>
+          <div class="card-body">
+            <% hodFeedback.forEach(hf => { %>
+              <div class="mb-3 p-3 border-start border-4 border-success bg-light rounded">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <strong class="text-success"><%= hf.hod_name %></strong>
+                  </div>
+                  <small class="text-muted">
+                    <i class="bi bi-clock me-1"></i><%= new Date(hf.created_at).toLocaleString() %>
+                  </small>
+                </div>
+                <p class="mb-0 text-dark"><%= hf.comment %></p>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-3">
+            <i class="bi bi-chat-left-text text-muted opacity-25 mb-2"></i>
+            <p class="text-muted small mb-0">No HOD feedback provided yet</p>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Quick Actions -->
+      <div class="card border-0 shadow-sm mt-3">
+        <div class="card-header bg-white border-0">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-lightning me-2 text-primary"></i>Quick Actions
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a href="/hod/reports" class="btn btn-outline-primary">
+              <i class="bi bi-list-ul me-1"></i>All Reports
+            </a>
+            <a href="/hod/dashboard" class="btn btn-outline-secondary">
+              <i class="bi bi-speedometer2 me-1"></i>HOD Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  border: 1px solid rgba(0,0,0,0.125);
+}
+.border-start {
+  border-left-color: #0d6efd !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Add confirmation for important actions
+  const feedbackForm = document.querySelector('form');
+  
+  feedbackForm.addEventListener('submit', function(e) {
+    const comment = this.querySelector('textarea[name="comment"]').value.trim();
+    if (comment.length < 10) {
+      e.preventDefault();
+      alert('Please provide more detailed feedback (at least 10 characters).');
+      return false;
+    }
+    
+    if (!confirm('Are you sure you want to submit this HOD feedback?')) {
+      e.preventDefault();
+      return false;
+    }
+  });
+});
+</script>
+=======
+<%
+  const title = 'Report Details - HOD';
+  const body = `
+    <div class="row mb-4">
+      <div class="col-12">
+        <a href="/hod/reports" class="btn btn-outline-secondary mb-3">
+          <i class="bi bi-arrow-left me-1"></i>Back to Reports
+        </a>
+        <h2><i class="bi bi-file-earmark-text me-2"></i>${report.title}</h2>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-8">
+        <div class="card mb-3">
+          <div class="card-header bg-white">
+            <h5 class="mb-0">Report Information</h5>
+          </div>
+          <div class="card-body">
+            <div class="row mb-2">
+              <div class="col-md-4"><strong>Student:</strong></div>
+              <div class="col-md-8">${report.student.full_name}</div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-md-4"><strong>Supervisor:</strong></div>
+              <div class="col-md-8">${report.supervisor.full_name}</div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-md-4"><strong>Stage:</strong></div>
+              <div class="col-md-8"><span class="badge bg-info">${report.report_stage.replace('_', ' ').toUpperCase()}</span></div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-md-4"><strong>Status:</strong></div>
+              <div class="col-md-8">
+                <% if (report.status === 'pending') { %>
+                  <span class="badge bg-warning text-dark">Pending</span>
+                <% } else if (report.status === 'approved') { %>
+                  <span class="badge bg-success">Approved</span>
+                <% } else if (report.status === 'rejected') { %>
+                  <span class="badge bg-danger">Rejected</span>
+                <% } else { %>
+                  <span class="badge bg-secondary">Feedback Given</span>
+                <% } %>
+              </div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-md-4"><strong>Version:</strong></div>
+              <div class="col-md-8">v${report.version}</div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-md-4"><strong>Submitted:</strong></div>
+              <div class="col-md-8">${new Date(report.submitted_at).toLocaleString()}</div>
+            </div>
+            <div class="row">
+              <div class="col-12 mt-3">
+                <a href="${report.file_url}" class="btn btn-primary" download>
+                  <i class="bi bi-download me-1"></i>Download Report
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <% if (feedback && feedback.length > 0) { %>
+          <div class="card mb-3">
+            <div class="card-header bg-white">
+              <h5 class="mb-0">Supervisor Feedback</h5>
+            </div>
+            <div class="card-body">
+              <% feedback.forEach(fb => { %>
+                <div class="mb-3 p-3 border-start border-4 border-primary bg-light">
+                  <div class="d-flex justify-content-between mb-2">
+                    <strong>${fb.supervisor.full_name}</strong>
+                    <small class="text-muted">${new Date(fb.created_at).toLocaleString()}</small>
+                  </div>
+                  <p class="mb-2">${fb.comment}</p>
+                  <span class="badge bg-secondary">${fb.action_taken.replace('_', ' ').toUpperCase()}</span>
+                  <% if (fb.annotated_file_url) { %>
+                    <a href="${fb.annotated_file_url}" class="btn btn-sm btn-outline-primary ms-2" download>
+                      <i class="bi bi-download"></i> Annotated File
+                    </a>
+                  <% } %>
+                </div>
+              <% }); %>
+            </div>
+          </div>
+        <% } %>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header bg-white">
+            <h5 class="mb-0">Provide HOD Feedback</h5>
+          </div>
+          <div class="card-body">
+            <form action="/hod/feedback" method="POST">
+              <input type="hidden" name="reportId" value="${report.id}">
+              <div class="mb-3">
+                <label class="form-label">Your Feedback</label>
+                <textarea class="form-control" name="comment" rows="5" required></textarea>
+                <small class="text-muted">High-level oversight feedback</small>
+              </div>
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-send me-1"></i>Submit Feedback
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <% if (hodFeedback && hodFeedback.length > 0) { %>
+          <div class="card mt-3">
+            <div class="card-header bg-white">
+              <h5 class="mb-0">Previous HOD Feedback</h5>
+            </div>
+            <div class="card-body">
+              <% hodFeedback.forEach(hf => { %>
+                <div class="mb-3 p-2 bg-light rounded">
+                  <small class="text-muted">${new Date(hf.created_at).toLocaleString()}</small>
+                  <p class="mb-0 mt-1">${hf.comment}</p>
+                </div>
+              <% }); %>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  `;
+%>
+<%- include('../layouts/main', { title, body, user }) %>
+>>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae

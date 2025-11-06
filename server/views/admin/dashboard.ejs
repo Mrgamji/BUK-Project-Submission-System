@@ -1,0 +1,161 @@
+<div class="row mb-4">
+  <div class="col-12">
+    <h2><i class="bi bi-speedometer2 me-2"></i>General Admin Dashboard</h2>
+<<<<<<< HEAD
+    <p class="text-muted">System overview and user statistics</p>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card bg-primary text-white shadow-sm">
+      <div class="card-body">
+        <h3><%= stats.coordinators %></h3>
+        <p>Level Coordinators</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-success text-white shadow-sm">
+      <div class="card-body">
+        <h3><%= stats.supervisors %></h3>
+        <p>Supervisors</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-warning text-dark shadow-sm">
+      <div class="card-body">
+        <h3><%= stats.students %></h3>
+        <p>Students</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-danger text-white shadow-sm">
+      <div class="card-body">
+        <h3><%= stats.hods %></h3>
+        <p>HODs</p>
+=======
+    <p class="text-muted">Manage level coordinators and oversee the entire system</p>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-3 mb-3">
+    <div class="card stat-card">
+      <div class="card-body">
+        <h3 class="card-title"><%= stats.coordinators %></h3>
+        <p class="card-text">Level Coordinators</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card stat-card">
+      <div class="card-body">
+        <h3 class="card-title"><%= stats.supervisors %></h3>
+        <p class="card-text">Supervisors</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card stat-card">
+      <div class="card-body">
+        <h3 class="card-title"><%= stats.students %></h3>
+        <p class="card-text">Students</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card stat-card">
+      <div class="card-body">
+        <h3 class="card-title"><%= stats.hods %></h3>
+        <p class="card-text">HODs</p>
+>>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+<<<<<<< HEAD
+  <div class="card-header d-flex justify-content-between align-items-center bg-white">
+    <h5 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i>Recent Users</h5>
+    <a href="/admin/manage-users" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-people"></i> Manage All
+    </a>
+  </div>
+  <div class="card-body">
+    <% if (recentUsers && recentUsers.length) { %>
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Level</th>
+            <th>Joined</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% recentUsers.forEach(u => { %>
+            <tr>
+              <td><%= u.full_name %></td>
+              <td><%= u.email %></td>
+              <td><span class="badge bg-secondary text-uppercase"><%= u.role %></span></td>
+              <td><%= u.level || '-' %></td>
+              <td><%= new Date(u.created_at).toLocaleDateString() %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } else { %>
+      <p class="text-muted text-center py-3">No users found.</p>
+=======
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-people me-2"></i>Level Coordinators</h5>
+    <a href="/admin/add-coordinator" class="btn btn-primary btn-sm">
+      <i class="bi bi-person-plus me-1"></i>Add Coordinator
+    </a>
+  </div>
+  <div class="card-body">
+    <% if (coordinators && coordinators.length > 0) { %>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Full Name</th>
+              <th>Email</th>
+              <th>Level</th>
+              <th>Created At</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% coordinators.forEach(coordinator => { %>
+              <tr>
+                <td><%= coordinator.full_name %></td>
+                <td><%= coordinator.email %></td>
+                <td><span class="badge bg-info"><%= coordinator.level %> Level</span></td>
+                <td><%= new Date(coordinator.created_at).toLocaleDateString() %></td>
+                <td>
+                  <a href="/admin/edit-coordinator/<%= coordinator.id %>" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <form action="/admin/delete-coordinator/<%= coordinator.id %>" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure?')">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <p class="text-muted text-center py-4">No level coordinators yet. Add one to get started.</p>
+>>>>>>> 0d0ed4a9a4cd455f44f4517cd207ea505dcef7ae
+    <% } %>
+  </div>
+</div>

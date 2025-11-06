@@ -1,0 +1,145 @@
+<%
+  const title = 'Report Details';
+  const body = `
+    <div class="row mb-4">
+      <div class="col-12">
+        <a href="/student/dashboard" class="btn btn-outline-secondary mb-3">
+          <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+        </a>
+        <h2><i class="bi bi-file-earmark-text me-2"></i>${report.title}</h2>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-8">
+        <div class="card mb-3">
+          <div class="card-header bg-white">
+            <h5 class="mb-0">Report Information</h5>
+          </div>
+          <div class="card-body">
+            <div class="row mb-2">
+              <div class="col-md-4"><strong>Stage:</strong></div>
+              <div class="col-md-8"><span class="badge bg-info">${report.report_stage.replace('_', ' ').toUpperCase()}</span></div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-md-4"><strong>Status:</strong></div>
+              <div class="col-md-8">
+                <% if (report.status === 'pending') { %>
+                  <span class="badge bg-warning text-dark">Pending Review</span>
+                <% } else if (report.status === 'approved') { %>
+                  <span class="badge bg-success">Approved</span>
+                <% } else if (report.status === 'rejected') { %>
+                  <span class="badge bg-danger">Rejected</span>
+                <% } else { %>
+                  <span class="badge bg-secondary">Feedback Given</span>
+                <% } %>
+              </div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-md-4"><strong>Version:</strong></div>
+              <div class="col-md-8">v${report.version}</div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-md-4"><strong>Supervisor:</strong></div>
+              <div class="col-md-8">${report.supervisor.full_name}</div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-md-4"><strong>File:</strong></div>
+              <div class="col-md-8">${report.file_name}</div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-md-4"><strong>Submitted:</strong></div>
+              <div class="col-md-8">${new Date(report.submitted_at).toLocaleString()}</div>
+            </div>
+            <div class="row">
+              <div class="col-12 mt-3">
+                <a href="${report.file_url}" class="btn btn-primary" download>
+                  <i class="bi bi-download me-1"></i>Download Your Report
+                </a>
+                <% if (report.status === 'feedback_given' || report.status === 'rejected') { %>
+                  <a href="/student/reupload/${report.id}" class="btn btn-warning">
+                    <i class="bi bi-arrow-repeat me-1"></i>Reupload Report
+                  </a>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <% if (feedback && feedback.length > 0) { %>
+          <div class="card">
+            <div class="card-header bg-white">
+              <h5 class="mb-0">Supervisor Feedback</h5>
+            </div>
+            <div class="card-body">
+              <% feedback.forEach(fb => { %>
+                <div class="mb-3 p-3 border-start border-4 border-primary bg-light">
+                  <div class="d-flex justify-content-between mb-2">
+                    <strong>${fb.supervisor.full_name}</strong>
+                    <small class="text-muted">${new Date(fb.created_at).toLocaleString()}</small>
+                  </div>
+                  <p class="mb-2">${fb.comment}</p>
+                  <span class="badge bg-secondary">${fb.action_taken.replace('_', ' ').toUpperCase()}</span>
+                  <% if (fb.annotated_file_url) { %>
+                    <a href="${fb.annotated_file_url}" class="btn btn-sm btn-outline-primary ms-2" download>
+                      <i class="bi bi-download"></i> Download Annotated File
+                    </a>
+                  <% } %>
+                </div>
+              <% }); %>
+            </div>
+          </div>
+        <% } else { %>
+          <div class="card">
+            <div class="card-body text-center text-muted py-5">
+              <i class="bi bi-clock-history" style="font-size: 3rem;"></i>
+              <p class="mt-3">Waiting for supervisor feedback...</p>
+            </div>
+          </div>
+        <% } %>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header bg-white">
+            <h6 class="mb-0">Quick Actions</h6>
+          </div>
+          <div class="card-body">
+            <a href="/student/dashboard" class="btn btn-outline-primary w-100 mb-2">
+              <i class="bi bi-house"></i> Go to Dashboard
+            </a>
+            <a href="${report.file_url}" class="btn btn-outline-secondary w-100 mb-2" download>
+              <i class="bi bi-download"></i> Download Report
+            </a>
+            <% if (report.status === 'feedback_given' || report.status === 'rejected') { %>
+              <a href="/student/reupload/${report.id}" class="btn btn-warning w-100">
+                <i class="bi bi-arrow-repeat"></i> Reupload New Version
+              </a>
+            <% } %>
+          </div>
+        </div>
+
+        <div class="card mt-3">
+          <div class="card-header bg-white">
+            <h6 class="mb-0">Status Guide</h6>
+          </div>
+          <div class="card-body">
+            <p class="small mb-2">
+              <span class="badge bg-warning text-dark">Pending</span> - Awaiting supervisor review
+            </p>
+            <p class="small mb-2">
+              <span class="badge bg-secondary">Feedback Given</span> - Review feedback and reupload if needed
+            </p>
+            <p class="small mb-2">
+              <span class="badge bg-success">Approved</span> - Report approved by supervisor
+            </p>
+            <p class="small mb-0">
+              <span class="badge bg-danger">Rejected</span> - Major revisions needed
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+%>
+<%- include('../layouts/main', { title, body, user }) %>
