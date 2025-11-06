@@ -1,108 +1,507 @@
-<div class="row mb-4">
-  <div class="col-12 d-flex justify-content-between align-items-center">
-    <h2><i class="bi bi-people me-2"></i>Manage Users</h2>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
-      <i class="bi bi-person-plus"></i> Add User
-    </button>
-  </div>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4F8CFF;
+            --secondary-color: #22326C;
+            --info-color: #54BAB9;
+            --accent-color: #D183C9;
+            --success-color: #5BB85D;
+            --warning-color: #ffbe76;
+            --danger-color: #F36A6A;
+            --light-bg: #f6f8fb;
+            --border-color: #e3e7ef;
+        }
+        
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 6px 36px 0 rgba(60,72,154,0.10);
+            margin-bottom: 2rem;
+        }
 
-<div class="card">
-  <div class="card-body">
-    <% if (error) { %>
-      <div class="alert alert-danger"><%= error %></div>
-    <% } %>
+        .gradient-header {
+            background: linear-gradient(90deg,var(--primary-color) 0,var(--secondary-color) 100%);
+            color: #fff;
+            padding: 2rem;
+            border-radius: 0 0 18px 18px;
+            box-shadow: 0 4px 30px 0 rgba(52,74,171,0.08);
+        }
+        .gradient-header .icon-circle {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.09);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 2rem;
+            margin-right: 1rem;
+        }
 
-    <% if (users && users.length > 0) { %>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Level</th>
-              <th>Department</th>
-              <th>Created</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% users.forEach(u => { %>
-              <tr>
-                <td><%= u.full_name %></td>
-                <td><%= u.email %></td>
-                <td><span class="badge bg-info"><%= u.role.replace('_', ' ').toUpperCase() %></span></td>
-                <td><%= u.level || '-' %></td>
-                <td><%= u.department || 'Computer Science' %></td>
-                <td><%= new Date(u.created_at).toLocaleDateString() %></td>
-                <td>
-                  <% if (user.id !== u.id) { %>
-                    <form action="/admin/delete-user/<%= u.id %>" method="POST" onsubmit="return confirm('Are you sure?')" style="display:inline;">
-                      <button type="submit" class="btn btn-sm btn-outline-danger">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </form>
-                  <% } %>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    <% } else { %>
-      <p class="text-center text-muted py-4">No users found</p>
-    <% } %>
-  </div>
-</div>
+        .btn-primary, .btn-primary:focus {
+            background: linear-gradient(92deg,var(--primary-color), var(--accent-color));
+            border: none;
+            box-shadow: 0 2px 12px 0 var(--accent-color, #b197fc33);
+            transition: background 0.3s;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(112deg,var(--primary-color), var(--info-color));
+        }
+        .btn-rounded {
+            border-radius: 50px !important;
+        }
 
-<!-- ✅ Add User Modal -->
-<div class="modal fade" id="addUserModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form action="/admin/add-user" method="POST">
-        <div class="modal-header">
-          <h5 class="modal-title">Add New User</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        .search-box {
+            max-width: 320px;
+            min-width: 220px;
+            font-size: 1rem;
+        }
+        .input-group-text {
+            background: #fff;
+        }
+        .form-select, .form-control {
+            border-radius: 8px;
+        }
+        .filter-dropdown .dropdown-menu {
+            font-size: 0.92rem;
+        }
+        .table {
+            border-radius: 10px;
+        }
+        .table th {
+            background: #f1f4fa;
+            font-weight: 700;
+            font-size: 0.96rem;
+            color: #6d739b;
+            padding: 0.90rem 0.75rem;
+            border-top: none;
+        }
+        .table td {
+            font-size: 0.98rem;
+            padding: 0.70rem 0.75rem;
+            vertical-align: middle;
+        }
+        .bg-badge-student { background: #EDF4FF; color: #2575fc; }
+        .bg-badge-supervisor { background: #E6FAFA; color: #0ca6a6; }
+        .bg-badge-level { background: #FFFFF1; color: #ffbe76; }
+        .bg-badge-hod { background: #F4FFED; color: #42c968; }
+        .bg-badge-general { background: #EFEFFF; color: #3e32a8; }
+        .bg-badge-default { background: #e9ecef; color: #495057; }
+        .badge {
+            font-size: 0.84em;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            letter-spacing: .02em;
+            padding: 0.35em 0.95em;
+            box-shadow: 0 1px 4px 0 #00000008;
+        }
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(120deg,var(--primary-color) 30%, var(--info-color) 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-right: 0.6rem;
+            box-shadow: 0 2px 10px 0 #c3e3ff6a;
+        }
+        .fw-medium {
+            font-weight: 600;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 0.2rem;
+        }
+        .action-buttons .btn {
+            box-shadow: none;
+        }
+        .action-buttons .btn-outline-secondary:hover, .action-buttons .btn-outline-secondary:focus {
+            background: #eaedfa;
+            color: #364fc7;
+            border-color: var(--primary-color);
+        }
+        .action-buttons .btn-outline-danger:hover, .action-buttons .btn-outline-danger:focus {
+            background: #ffeaea;
+            color: #cd2020;
+            border-color: var(--danger-color);
+        }
+        .table-responsive {
+            border-radius: 10px;
+        }
+        .modal-header {
+            background: linear-gradient(92deg,var(--primary-color) 0,var(--secondary-color) 100%);
+            border: none;
+            color: #fff;
+            border-radius: 0.5rem 0.5rem 0 0;
+            padding-bottom: 0.4rem;
+        }
+        .modal-title {
+            font-weight: 700;
+        }
+        .modal-content {
+            box-shadow: 0 12px 60px 0 #7da5ef31;
+            border-radius: 0.8rem;
+            border: none;
+        }
+        .form-label {
+            font-size: 0.93rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #22326C;
+        }
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 1px 3px #bad6fb63;
+            border-color: var(--primary-color);
+        }
+        .modal-footer {
+            background: #fcfcff;
+            border-radius: 0 0 0.8rem 0.8rem;
+        }
+        .pagination .page-item.active .page-link {
+            background: linear-gradient(92deg,var(--primary-color), var(--accent-color));
+            border: none;
+            color: #fff;
+        }
+        .pagination .page-link {
+            border-radius: 10px;
+        }
+        .table-empty-icon {
+            color: #bfc7db !important;
+            opacity: 0.36;
+        }
+        .CustomBackdrop {
+            position: fixed !important;
+            top: 0; left: 0; right:0; bottom:0;
+            z-index: 1050;
+            background: #161c2e22 !important;
+        }
+        @media (max-width: 990px) {
+            .gradient-header {
+                padding: 1.2rem;
+            }
+        }
+        @media (max-width: 768px) {
+            .table th, .table td {
+                font-size: .90rem !important;
+                padding: 0.6rem 0.3rem;
+            }
+            .gradient-header {
+                padding: .8rem;
+            }
+            .user-avatar {width:32px;height:32px;font-size:.92rem;}
+            .search-box { max-width:100%; margin-bottom: 1rem;}
+            .card { margin-bottom:1.2rem;}
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <header class="gradient-header mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+            <div class="d-flex align-items-center mb-2 mb-md-0">
+                <span class="icon-circle shadow-sm"><i class="bi bi-people-fill"></i></span>
+                <div>
+                    <h1 class="h3 mb-1 fw-bold" style="letter-spacing: .5px;">User Management</h1>
+                    <p class="text-white-50 small mb-0">Manage users, roles & permissions</p>
+                </div>
+            </div>
+            <button class="btn btn-primary btn-rounded shadow-sm d-flex align-items-center px-4 py-2" 
+                data-bs-toggle="modal" data-bs-target="#addUserModal">
+                <i class="bi bi-person-plus me-2"></i> Add User
+            </button>
+        </header>
+        <div class="container-xl">
+            <!-- Filters and Search -->
+            <div class="row align-items-center mb-3 g-2">
+                <div class="col-md-8 d-flex flex-wrap align-items-center gap-2">
+                    <div class="search-box">
+                        <div class="input-group input-group-sm shadow-sm">
+                            <span class="input-group-text border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" class="form-control border-start-0" placeholder="Search users...">
+                        </div>
+                    </div>
+                    <div class="filter-dropdown">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary btn-rounded px-3 py-1 shadow-sm dropdown-toggle"
+                                type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-funnel me-1"></i> Role
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item small" href="#">All Roles</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item small" href="#">Student</a></li>
+                                <li><a class="dropdown-item small" href="#">Supervisor</a></li>
+                                <li><a class="dropdown-item small" href="#">Level Coordinator</a></li>
+                                <li><a class="dropdown-item small" href="#">HOD</a></li>
+                                <li><a class="dropdown-item small" href="#">General Admin</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="filter-dropdown">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary btn-rounded px-3 py-1 shadow-sm dropdown-toggle"
+                                type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-filter me-1"></i> Department
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item small" href="#">All Departments</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item small" href="#">Computer Science</a></li>
+                                <li><a class="dropdown-item small" href="#">Information Technology</a></li>
+                                <li><a class="dropdown-item small" href="#">Software Engineering</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                    <span class="badge bg-badge-default px-3 py-2 shadow-sm fs-6" id="userCount">
+                        <i class="bi bi-people me-1"></i>
+                        12 users found
+                    </span>
+                </div>
+            </div>
+            <!-- Users Table -->
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <% if (error) { %>
+                        <div class="alert alert-danger m-3"><%= error %></div>
+                    <% } %>
+                    <% if (users && users.length > 0) { %>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-3">User</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Level</th>
+                                        <th>Department</th>
+                                        <th>Created</th>
+                                        <th class="text-end pe-3">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% users.forEach(u => { %>
+                                    <tr>
+                                        <td class="ps-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="user-avatar">
+                                                    <%= u.full_name.split(' ').map(n => n[0]).join('').toUpperCase() %>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-medium mb-0 text-dark"><%= u.full_name %></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-truncate" style="max-width: 200px;"><%= u.email %></td>
+                                        <td>
+                                            <%
+                                                let b = u.role;
+                                                let badgeClass = 'bg-badge-default';
+                                                if (b === 'student') badgeClass = 'bg-badge-student';
+                                                else if (b === 'supervisor') badgeClass = 'bg-badge-supervisor';
+                                                else if (b === 'level_coordinator') badgeClass = 'bg-badge-level';
+                                                else if (b === 'hod') badgeClass = 'bg-badge-hod';
+                                                else if (b === 'general_admin') badgeClass = 'bg-badge-general';
+                                            %>
+                                            <span class="badge <%= badgeClass %> text-capitalize shadow-sm">
+                                                <%= u.role.replace('_', ' ') %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <% if (u.level) { %>
+                                                <span class="badge bg-light text-dark shadow-sm"><%= u.level %></span>
+                                            <% } else { %>-<% } %>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark shadow-sm"><%= u.department || 'Computer Science' %></span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark shadow-sm">
+                                                <%= new Date(u.created_at).toLocaleDateString() %>
+                                            </span>
+                                        </td>
+                                        <td class="text-end pe-3 align-middle">
+                                            <div class="action-buttons">
+                                                <% if (user.id !== u.id) { %>
+                                                    <button class="btn btn-sm btn-outline-secondary btn-rounded" data-bs-toggle="tooltip" title="Edit">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <form action="/admin/delete-user/<%= u.id %>" method="POST"
+                                                        onsubmit="return confirm('Are you sure you want to delete this user?')"
+                                                        style="display:inline;">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-rounded" data-bs-toggle="tooltip" title="Delete">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                <% } else { %>
+                                                    <span class="badge bg-light text-muted border">Current User</span>
+                                                <% } %>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="bi bi-people display-1 table-empty-icon"></i>
+                            </div>
+                            <h5 class="mb-2 text-secondary">No users found</h5>
+                            <p class="text-muted small">Get started by adding your first user</p>
+                            <button class="btn btn-primary btn-rounded px-4 shadow-sm mt-2" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                                <i class="bi bi-person-plus me-1"></i> Add User
+                            </button>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+            <!-- Pagination -->
+            <% if (users && users.length > 0) { %>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="text-muted small">
+                        Showing 1 to <%= users.length %> of <%= users.length %> entries
+                    </div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0 align-items-center">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1"><i class="bi bi-chevron-left"></i> Previous</a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Next <i class="bi bi-chevron-right"></i></a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            <% } %>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Full Name</label>
-            <input type="text" class="form-control" name="full_name" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-control" name="email" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Password</label>
-            <input type="password" class="form-control" name="password" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Role</label>
-            <select class="form-select" name="role" required>
-              <option value="">Select role...</option>
-              <option value="student">Student</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="level_coordinator">Level Coordinator</option>
-              <option value="hod">HOD</option>
-              <option value="general_admin">General Admin</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Level (optional)</label>
-            <input type="text" class="form-control" name="level" placeholder="e.g. 400">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Department</label>
-            <input type="text" class="form-control" name="department" value="Computer Science">
-          </div>
+    </main>
+    <!-- Add User Modal -->
+    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width:430px;">
+            <div class="modal-content">
+                <form action="/admin/add-user" method="POST" autocomplete="off">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addUserModalLabel">
+                            <i class="bi bi-person-plus me-2"></i> Add New User
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body px-3 pb-3 pt-3">
+                        <div class="row g-2">
+                            <div class="col-md-12 mb-2">
+                                <label class="form-label" for="full_name">Full Name</label>
+                                <input type="text" class="form-control shadow-none" name="full_name" id="full_name" autocomplete="off" required>
+                            </div>
+                            <div class="col-md-12 mb-2">
+                                <label class="form-label" for="email">Email</label>
+                                <input type="email" class="form-control shadow-none" name="email" id="email" autocomplete="off" required>
+                            </div>
+                            <div class="col-md-12 mb-2">
+                                <label class="form-label" for="password">Password</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control shadow-none" name="password" id="password" autocomplete="new-password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label" for="role">Role</label>
+                                <select class="form-select shadow-none" name="role" id="role" required>
+                                    <option value="">Select role...</option>
+                                    <option value="student">Student</option>
+                                    <option value="supervisor">Supervisor</option>
+                                    <option value="level_coordinator">Level Coordinator</option>
+                                    <option value="hod">HOD</option>
+                                    <option value="general_admin">General Admin</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label" for="level">Level (optional)</label>
+                                <input type="text" class="form-control shadow-none" name="level" id="level" placeholder="e.g. 400">
+                            </div>
+                            <div class="col-md-12 mb-2">
+                                <label class="form-label" for="department">Department</label>
+                                <input type="text" class="form-control shadow-none" name="department" id="department" value="Computer Science">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer py-2">
+                        <button type="button" class="btn btn-secondary btn-rounded px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-rounded px-4">Add User</button>
+                    </div>
+                </form>
+            </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Add User</button>
-        </div>
-      </form>
     </div>
-  </div>
-</div>
+    <!-- Custom Backdrop for modal improvement -->
+    <div class="modal-backdrop fade" id="customModalBackdrop" style="display:none;"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Bootstrap tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+
+        // Password field toggle (eye icon)
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+            if(toggleBtn && passwordInput){
+                toggleBtn.addEventListener('click', function(){
+                    const type = passwordInput.type === 'password' ? 'text' : 'password';
+                    passwordInput.type = type;
+                    this.querySelector('i').classList.toggle('bi-eye');
+                    this.querySelector('i').classList.toggle('bi-eye-slash');
+                });
+            }
+        });
+
+        // Fix for modal stacking and appearance
+        const addUserModal = document.getElementById('addUserModal');
+        if (addUserModal) {
+            addUserModal.addEventListener('show.bs.modal', function () {
+                // custom modal backdrop for better appearance
+                var backdrop = document.getElementById('customModalBackdrop');
+                if (backdrop) {
+                    backdrop.classList.add('show', 'CustomBackdrop');
+                    backdrop.style.display = 'block';
+                }
+                document.body.classList.add('modal-open');
+            });
+            addUserModal.addEventListener('hidden.bs.modal', function () {
+                var backdrop = document.getElementById('customModalBackdrop');
+                if (backdrop) {
+                    backdrop.classList.remove('show', 'CustomBackdrop');
+                    backdrop.style.display = 'none';
+                }
+                document.body.classList.remove('modal-open');
+            });
+        }
+    </script>
+</body>
+</html>
