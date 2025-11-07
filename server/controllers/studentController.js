@@ -258,7 +258,7 @@ const postUploadReport = async (req, res) => {
     }
 
     // Get available supervisor
-    const supervisor = queries.getAvailableSupervisor.get();
+    const supervisor = queries.getSupervisor.get(user.id);
     if (!supervisor) {
       fileCleanupRequired = true;
       tempFilePath = file.path;
