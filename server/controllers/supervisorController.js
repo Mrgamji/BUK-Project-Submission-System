@@ -656,9 +656,10 @@ const getAssignments = async (req, res) => {
 };
 
 // Get report details
+// Get report details
 const getReportDetails = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params; // Now using 'id' instead of 'reportId'
     const supervisorId = req.session.user?.id;
 
     if (!supervisorId) {
@@ -735,7 +736,8 @@ const postFeedback = async (req, res) => {
     const supervisorId = req.session.user?.id;
 
     if (!supervisorId) {
-      return res.redirect(`/supervisor/reports?error=${encodeURIComponent('Not authenticated')}`);
+      req.flash('error', 'Not authenticated');
+      return res.redirect(`/supervisor/report/${report_id}`); // CHANGED TO SINGULAR
     }
 
     // Verify report exists and belongs to supervisor
@@ -747,16 +749,19 @@ const postFeedback = async (req, res) => {
     `).get(report_id, supervisorId);
 
     if (!report) {
-      return res.redirect(`/supervisor/reports?error=${encodeURIComponent('Report not found')}`);
+      req.flash('error', 'Report not found');
+      return res.redirect(`/supervisor/report/${report_id}`); // CHANGED TO SINGULAR
     }
 
     // Validate fields
     if (!comment || !comment.trim()) {
-      return res.redirect(`/supervisor/reports/${report_id}?error=${encodeURIComponent('Feedback comment is required')}`);
+      req.flash('error', 'Feedback comment is required');
+      return res.redirect(`/supervisor/report/${report_id}`); // CHANGED TO SINGULAR
     }
 
     if (!action_taken) {
-      return res.redirect(`/supervisor/reports/${report_id}?error=${encodeURIComponent('Action taken is required')}`);
+      req.flash('error', 'Action taken is required');
+      return res.redirect(`/supervisor/report/${report_id}`); // CHANGED TO SINGULAR
     }
 
     // Insert feedback
@@ -785,7 +790,7 @@ const postFeedback = async (req, res) => {
       WHERE id = ?
     `).run(newStatus, report_id);
 
-    // Log activity (fail-safe)
+    // Log activity
     try {
       logActivity(supervisorId, 'feedback_provided', 'report', report_id, {
         student_name: report.student_name,
@@ -795,41 +800,30 @@ const postFeedback = async (req, res) => {
       console.error('Activity logging error:', logError);
     }
 
-    // ✅ SEND STYLISH EMAIL INSIDE THIS FUNCTION
+    // Send email notification
     try {
       if (report.student_email) {
-
         const html = `
         <div style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5;">
           <div style="max-width: 600px; margin: auto; background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            
             <h2 style="color: #0066cc;">📘 Project Report Feedback Received</h2>
-
             <p>Hello <strong>${report.student_name}</strong>,</p>
-
             <p>Your supervisor has reviewed your project report titled:</p>
-
             <p style="font-size: 16px; font-weight: bold; margin: 10px 0;">📄 ${report.title}</p>
-
             <p style="margin-top: 20px;">Here is the feedback you received:</p>
-
             <div style="background: #f0f8ff; padding: 15px; border-left: 4px solid #0066cc; border-radius: 5px; margin-bottom: 20px;">
               <p style="margin: 0; font-size: 15px;">${comment}</p>
             </div>
-
             <p><strong>Action Taken:</strong> 
               <span style="color: #444; font-size: 15px;">
                 ${action_taken.replace("_", " ")}
               </span>
             </p>
-
             <p style="margin-top: 20px;">Please log in to your dashboard to view full details.</p>
-
             <a href="https://your-domain.com/student/dashboard"
               style="display: inline-block; margin-top: 20px; padding: 12px 25px; background: #0066cc; color: white; text-decoration: none; border-radius: 5px;">
               Open Dashboard
             </a>
-
             <p style="margin-top: 30px; font-size: 13px; color: gray;">
               This is an automated message from the Project Submission System, Faculty of Computing, BUK.
             </p>
@@ -850,15 +844,16 @@ const postFeedback = async (req, res) => {
       console.error("❌ Failed to send feedback email:", emailError);
     }
 
-    // ✅ Final redirect
-    return res.redirect(`/supervisor/reports/${report_id}?success=${encodeURIComponent(successMessage)}`);
+    // ✅ Set success message and redirect back to the same report page
+    req.flash('success', successMessage);
+    return res.redirect(`/supervisor/report/${report_id}`); // CHANGED TO SINGULAR
 
   } catch (error) {
     console.error('Error submitting feedback:', error);
-    return res.redirect(`/supervisor/reports?error=${encodeURIComponent('Failed to submit feedback. Please try again.')}`);
+    req.flash('error', 'Failed to submit feedback. Please try again.');
+    return res.redirect(`/supervisor/report/${report_id}`); // CHANGED TO SINGULAR
   }
 };
-
 
 // Move report to next stage
 const moveToNextStage = async (req, res) => {

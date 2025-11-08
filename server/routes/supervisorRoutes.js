@@ -27,20 +27,21 @@ router.get('/student/:studentId', supervisorController.getStudentReports);
 // Report Management
 // ------------------------------
 
-// View a single report with feedback
+// View a single report with feedback - KEEP AS SINGULAR
 router.get('/report/:id', supervisorController.getReportDetails);
 
 // Submit feedback for a report
 router.post('/feedback', supervisorController.postFeedback);
 
-// Move a report to the next stage
-router.put('/reports/:reportId/move-next-stage', supervisorController.moveToNextStage);
+// Move a report to the next stage - CHANGE TO SINGULAR
+router.put('/report/:reportId/move-next-stage', supervisorController.moveToNextStage);
 
 // ------------------------------
 // File Operations
 // ------------------------------
-router.get('/files/view/:id', fileController.getFileView); // Changed from getFileContent
+router.get('/files/view/:id', fileController.getFileView);
 router.put('/files/:id', fileController.updateFileContent);
 router.get('/files/download/:id', fileController.downloadFile);
 router.get('/files/info/:id', fileController.getFileInfo);
+
 module.exports = router;

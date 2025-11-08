@@ -354,33 +354,29 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Move to next stage button
-  const moveNextStageBtn = document.getElementById('moveNextStageBtn');
-  if (moveNextStageBtn) {
-    moveNextStageBtn.addEventListener('click', function() {
-      const reportId = <%= typeof report !== 'undefined' ? report.id : 'null' %>;
-      if (reportId && confirm('Are you sure you want to advance this report to the next stage?')) {
-        fetch(`/supervisor/reports/${reportId}/move-next-stage`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            location.reload();
-          } else {
-            alert('Error: ' + data.message);
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('An error occurred while moving the report to the next stage');
-        });
+// In your EJS template, update the moveNextStage function:
+function moveToNextStage(reportId) {
+  if (confirm('Are you sure you want to advance this report to the next stage?')) {
+    fetch(`/supervisor/report/${reportId}/move-next-stage`, { // CHANGED TO SINGULAR
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
       }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert('Error: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred while moving the report to the next stage');
     });
   }
-
+}
   // Form submission handling
   const feedbackForm = document.getElementById('feedbackForm');
   if (feedbackForm) {
