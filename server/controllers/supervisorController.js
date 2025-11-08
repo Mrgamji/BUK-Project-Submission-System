@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const { logActivity } = require('../utils/logger');
+const sendEmail = require('../utils/email')
 
 // Get supervisor dashboard data
 const getDashboard = async (req, res) => {
@@ -295,7 +296,6 @@ const getAssignedStudents = async (supervisorId) => {
   });
 };
 
-// Get recent reports
 const getRecentReports = async (supervisorId, limit = 5) => {
   return new Promise((resolve, reject) => {
     try {
@@ -306,11 +306,12 @@ const getRecentReports = async (supervisorId, limit = 5) => {
           u.email as student_email
         FROM reports r
         INNER JOIN users u ON r.student_id = u.id
-        WHERE r.supervisor_id = ?
+        WHERE r.supervisor_id = ? 
         ORDER BY r.submitted_at DESC
         LIMIT ?
       `).all(supervisorId, limit);
-
+      
+      console.log(`Found ${reports.length} reports for supervisor ${supervisorId}`);
       resolve(reports);
     } catch (error) {
       console.error('Error getting recent reports:', error);
@@ -739,7 +740,7 @@ const postFeedback = async (req, res) => {
 
     // Verify report exists and belongs to supervisor
     const report = db.prepare(`
-      SELECT r.*, u.full_name as student_name 
+      SELECT r.*, u.full_name as student_name, u.email as student_email
       FROM reports r
       INNER JOIN users u ON r.student_id = u.id
       WHERE r.id = ? AND r.supervisor_id = ?
@@ -749,7 +750,7 @@ const postFeedback = async (req, res) => {
       return res.redirect(`/supervisor/reports?error=${encodeURIComponent('Report not found')}`);
     }
 
-    // Validate required fields
+    // Validate fields
     if (!comment || !comment.trim()) {
       return res.redirect(`/supervisor/reports/${report_id}?error=${encodeURIComponent('Feedback comment is required')}`);
     }
@@ -759,12 +760,12 @@ const postFeedback = async (req, res) => {
     }
 
     // Insert feedback
-    const result = db.prepare(`
+    db.prepare(`
       INSERT INTO feedback (report_id, supervisor_id, comment, action_taken)
       VALUES (?, ?, ?, ?)
     `).run(report_id, supervisorId, comment.trim(), action_taken);
 
-    // Update report status based on action
+    // Determine new status
     let newStatus = 'feedback_given';
     let successMessage = 'Feedback submitted successfully!';
 
@@ -778,12 +779,13 @@ const postFeedback = async (req, res) => {
       successMessage = 'Feedback submitted! Meeting requested to discuss.';
     }
 
+    // Update report status
     db.prepare(`
       UPDATE reports SET status = ?, updated_at = datetime('now')
       WHERE id = ?
     `).run(newStatus, report_id);
 
-    // Log activity (with error handling since we don't want to break the flow)
+    // Log activity (fail-safe)
     try {
       logActivity(supervisorId, 'feedback_provided', 'report', report_id, {
         student_name: report.student_name,
@@ -791,10 +793,64 @@ const postFeedback = async (req, res) => {
       });
     } catch (logError) {
       console.error('Activity logging error:', logError);
-      // Continue even if logging fails
     }
 
-    // Redirect back with success message - THIS IS THE KEY CHANGE
+    // ✅ SEND STYLISH EMAIL INSIDE THIS FUNCTION
+    try {
+      if (report.student_email) {
+
+        const html = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5;">
+          <div style="max-width: 600px; margin: auto; background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            
+            <h2 style="color: #0066cc;">📘 Project Report Feedback Received</h2>
+
+            <p>Hello <strong>${report.student_name}</strong>,</p>
+
+            <p>Your supervisor has reviewed your project report titled:</p>
+
+            <p style="font-size: 16px; font-weight: bold; margin: 10px 0;">📄 ${report.title}</p>
+
+            <p style="margin-top: 20px;">Here is the feedback you received:</p>
+
+            <div style="background: #f0f8ff; padding: 15px; border-left: 4px solid #0066cc; border-radius: 5px; margin-bottom: 20px;">
+              <p style="margin: 0; font-size: 15px;">${comment}</p>
+            </div>
+
+            <p><strong>Action Taken:</strong> 
+              <span style="color: #444; font-size: 15px;">
+                ${action_taken.replace("_", " ")}
+              </span>
+            </p>
+
+            <p style="margin-top: 20px;">Please log in to your dashboard to view full details.</p>
+
+            <a href="https://your-domain.com/student/dashboard"
+              style="display: inline-block; margin-top: 20px; padding: 12px 25px; background: #0066cc; color: white; text-decoration: none; border-radius: 5px;">
+              Open Dashboard
+            </a>
+
+            <p style="margin-top: 30px; font-size: 13px; color: gray;">
+              This is an automated message from the Project Submission System, Faculty of Computing, BUK.
+            </p>
+          </div>
+        </div>
+        `;
+
+        await sendEmail({
+          to: report.student_email,
+          subject: "✅ New Feedback on Your Project Report",
+          html,
+          text: `You have received new feedback on your report titled "${report.title}". Login to your dashboard to read it.`
+        });
+
+        console.log("✅ Feedback email sent to student");
+      }
+    } catch (emailError) {
+      console.error("❌ Failed to send feedback email:", emailError);
+    }
+
+    // ✅ Final redirect
     return res.redirect(`/supervisor/reports/${report_id}?success=${encodeURIComponent(successMessage)}`);
 
   } catch (error) {
@@ -802,6 +858,7 @@ const postFeedback = async (req, res) => {
     return res.redirect(`/supervisor/reports?error=${encodeURIComponent('Failed to submit feedback. Please try again.')}`);
   }
 };
+
 
 // Move report to next stage
 const moveToNextStage = async (req, res) => {
